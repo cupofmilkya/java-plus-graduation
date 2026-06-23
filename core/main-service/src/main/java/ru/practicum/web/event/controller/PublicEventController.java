@@ -44,7 +44,21 @@ public class PublicEventController {
                 text, categories, paid, rangeStart, rangeEnd,
                 onlyAvailable, sort, from, size
         );
-        sendHit(request);
+
+        String ip = request.getRemoteAddr();
+        events.forEach(event -> {
+            try {
+                statsClient.hit(EndpointHitDto.builder()
+                        .app("ewm-main-service")
+                        .uri("/events/" + event.getId())
+                        .ip(ip)
+                        .timestamp(LocalDateTime.now())
+                        .build());
+            } catch (Exception e) {
+                log.error("Не удалось отправить хит для события {}: {}", event.getId(), e.getMessage());
+            }
+        });
+
         return ResponseEntity.ok(events);
     }
 
