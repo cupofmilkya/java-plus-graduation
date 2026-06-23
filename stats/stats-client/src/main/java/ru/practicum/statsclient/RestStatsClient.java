@@ -12,6 +12,8 @@ import ru.practicum.dto.EndpointHitDto;
 import ru.practicum.dto.ViewStatsDto;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -59,10 +61,13 @@ public class RestStatsClient implements StatsClient {
         Assert.notNull(start, "start must not be null");
         Assert.notNull(end, "end must not be null");
 
+        String encodedStart = URLEncoder.encode(start.format(FORMATTER), StandardCharsets.UTF_8);
+        String encodedEnd = URLEncoder.encode(end.format(FORMATTER), StandardCharsets.UTF_8);
+
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .path("/stats")
-                .queryParam("start", start.format(FORMATTER))
-                .queryParam("end", end.format(FORMATTER))
+                .queryParam("start", encodedStart)
+                .queryParam("end", encodedEnd)
                 .queryParam("unique", unique);
 
         if (uris != null && !uris.isEmpty()) {
@@ -71,7 +76,7 @@ public class RestStatsClient implements StatsClient {
             }
         }
 
-        URI uri = builder.build(true).toUri(); // true -> кодировать компоненты URI
+        URI uri = builder.build(false).toUri();
 
         try {
             ResponseEntity<List<ViewStatsDto>> response = restTemplate.exchange(
