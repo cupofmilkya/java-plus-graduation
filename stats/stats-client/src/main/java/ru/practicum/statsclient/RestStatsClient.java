@@ -47,10 +47,7 @@ public class RestStatsClient implements StatsClient {
     @Override
     public void hit(EndpointHitDto dto) {
         Assert.notNull(dto, "EndpointHitDto must not be null");
-        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl)
-                .path("/hit")
-                .build()
-                .toUri();
+        URI uri = UriComponentsBuilder.fromHttpUrl(baseUrl).path("/hit").build().toUri();
 
         log.info("Sending hit to: {}", uri);
         log.info("Hit data: app={}, uri={}, ip={}", dto.getApp(), dto.getUri(), dto.getIp());
@@ -66,38 +63,31 @@ public class RestStatsClient implements StatsClient {
 
     @Override
     public List<ViewStatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
-        Assert.notNull(start, "start must not be null");
-        Assert.notNull(end, "end must not be null");
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(baseUrl)
                 .path("/stats")
                 .queryParam("start", start.format(FORMATTER))
                 .queryParam("end", end.format(FORMATTER))
                 .queryParam("unique", unique);
 
-        if (uris != null && !uris.isEmpty()) {
-            for (String u : uris) {
-                builder.queryParam("uris", u);
-            }
+        if (uris != null) {
+            uris.forEach(uri -> builder.queryParam("uris", uri));
         }
 
-        URI uri = builder.build(true).toUri();
-        log.info("Sending getStats request to: {}", uri);
+        URI uri = builder.build()
+                .encode()
+                .toUri();
 
-        try {
-            ResponseEntity<List<ViewStatsDto>> response = restTemplate.exchange(
-                    uri,
-                    HttpMethod.GET,
-                    HttpEntity.EMPTY,
-                    new ParameterizedTypeReference<List<ViewStatsDto>>() {}
-            );
+        ResponseEntity<List<ViewStatsDto>> response =
+                restTemplate.exchange(
+                        uri,
+                        HttpMethod.GET,
+                        HttpEntity.EMPTY,
+                        new ParameterizedTypeReference<List<ViewStatsDto>>() {
+                        });
 
-            log.info("GetStats response status: {}", response.getStatusCode());
-            List<ViewStatsDto> body = response.getBody();
-            return body != null ? body : new ArrayList<>();
-        } catch (RestClientException ex) {
-            log.error("Error getting stats from {}: {}", uri, ex.getMessage());
-            throw new StatsClientException("Ошибка вызова GET /stats: " + ex.getMessage(), ex);
-        }
+        return response.getBody() == null
+                ? List.of()
+                : response.getBody();
     }
 }
