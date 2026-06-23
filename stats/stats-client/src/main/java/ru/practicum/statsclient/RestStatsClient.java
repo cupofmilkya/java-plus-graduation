@@ -1,5 +1,6 @@
 package ru.practicum.statsclient;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,7 @@ import java.util.List;
  * Реализация StatsClient на основе RestTemplate.
  * Важно: параметры дат должны быть URL-кодированы, формат строго "yyyy-MM-dd HH:mm:ss".
  */
+@Slf4j
 public class RestStatsClient implements StatsClient {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -49,9 +51,15 @@ public class RestStatsClient implements StatsClient {
                 .path("/hit")
                 .build()
                 .toUri();
+
+        log.info("Sending hit to: {}", uri);
+        log.info("Hit data: app={}, uri={}, ip={}", dto.getApp(), dto.getUri(), dto.getIp());
+
         try {
             restTemplate.postForLocation(uri, dto);
+            log.info("Hit sent successfully");
         } catch (RestClientException ex) {
+            log.error("Error sending hit to {}: {}", uri, ex.getMessage());
             throw new StatsClientException("Ошибка вызова POST /hit: " + ex.getMessage(), ex);
         }
     }
@@ -61,13 +69,10 @@ public class RestStatsClient implements StatsClient {
         Assert.notNull(start, "start must not be null");
         Assert.notNull(end, "end must not be null");
 
-        String encodedStart = URLEncoder.encode(start.format(FORMATTER), StandardCharsets.UTF_8);
-        String encodedEnd = URLEncoder.encode(end.format(FORMATTER), StandardCharsets.UTF_8);
-
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .path("/stats")
-                .queryParam("start", encodedStart)
-                .queryParam("end", encodedEnd)
+                .queryParam("start", start.format(FORMATTER))
+                .queryParam("end", end.format(FORMATTER))
                 .queryParam("unique", unique);
 
         if (uris != null && !uris.isEmpty()) {
@@ -76,7 +81,8 @@ public class RestStatsClient implements StatsClient {
             }
         }
 
-        URI uri = builder.build(false).toUri();
+        URI uri = builder.build(true).toUri();
+        log.info("Sending getStats request to: {}", uri);
 
         try {
             ResponseEntity<List<ViewStatsDto>> response = restTemplate.exchange(
@@ -86,9 +92,11 @@ public class RestStatsClient implements StatsClient {
                     new ParameterizedTypeReference<List<ViewStatsDto>>() {}
             );
 
+            log.info("GetStats response status: {}", response.getStatusCode());
             List<ViewStatsDto> body = response.getBody();
             return body != null ? body : new ArrayList<>();
         } catch (RestClientException ex) {
+            log.error("Error getting stats from {}: {}", uri, ex.getMessage());
             throw new StatsClientException("Ошибка вызова GET /stats: " + ex.getMessage(), ex);
         }
     }
