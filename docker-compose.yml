@@ -1,4 +1,5 @@
 services:
+  # Main Service Database (legacy)
   main-db:
     image: postgres:16.1
     container_name: ewm-main-db
@@ -17,6 +18,64 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Event Service Database
+  event-db:
+    image: postgres:16.1
+    container_name: ewm-event-db
+    environment:
+      POSTGRES_DB: ewm_events
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Request Service Database
+  request-db:
+    image: postgres:16.1
+    container_name: ewm-request-db
+    environment:
+      POSTGRES_DB: ewm_requests
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - request-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # User Service Database
+  user-db:
+    image: postgres:16.1
+    container_name: ewm-user-db
+    environment:
+      POSTGRES_DB: ewm_users
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - user-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Stats Service Database (existing)
   stats-db:
     image: postgres:16.1
     container_name: ewm-stats-db
@@ -25,7 +84,7 @@ services:
       POSTGRES_USER: stats
       POSTGRES_PASSWORD: stats
     ports:
-      - "5433:5432"
+      - "5436:5432"
     volumes:
       - stats-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -37,6 +96,12 @@ services:
 
 volumes:
   main-db-data:
+    driver: local
+  event-db-data:
+    driver: local
+  request-db-data:
+    driver: local
+  user-db-data:
     driver: local
   stats-db-data:
     driver: local

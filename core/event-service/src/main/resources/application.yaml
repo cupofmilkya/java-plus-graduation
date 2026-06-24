@@ -1,0 +1,59 @@
+spring:
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ewm_events
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+
+server:
+  port: 0
+
+logging:
+  level:
+    ru.practicum: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+
+stats:
+  client:
+    base-url: http://localhost:9090
+    connect-timeout-millis: 5000
+    read-timeout-millis: 5000
+
+app:
+  default-page-size: 10
+  event:
+    publication-min-hours: 1
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.value}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
