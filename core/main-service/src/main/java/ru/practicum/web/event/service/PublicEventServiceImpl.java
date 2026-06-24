@@ -45,17 +45,13 @@ public class PublicEventServiceImpl implements PublicEventService {
         log.info("Запрос события с id={}", id);
 
         Event event = eventRepository.findByIdAndStatus(id, EventStatus.PUBLISHED)
-                .orElseThrow(() -> {
-                    log.warn("Опубликованное событие с id={} не найдено", id);
-                    return new NotFoundException("Event with id=" + id + " was not found");
-                });
+                .orElseThrow(() -> new NotFoundException(
+                        "Event with id=" + id + " was not found"));
 
         Long views = getViewsForEvent(event);
-        event.setViews(views + 1);
-        log.debug("Просмотров события {}: {}", id, views + 1);
 
         EventDto dto = EventMapper.toDto(event);
-        dto.setViews(views + 1);
+        dto.setViews(views);
 
         return dto;
     }

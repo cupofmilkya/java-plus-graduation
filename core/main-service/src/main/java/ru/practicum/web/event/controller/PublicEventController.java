@@ -36,21 +36,29 @@ public class PublicEventController {
             @RequestParam(defaultValue = "10") int size,
             HttpServletRequest request
     ) {
-        log.info("GET /events with params: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, " +
-                        "onlyAvailable={}, sort={}, from={}, size={}",
-                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+        log.info("GET /events");
+        sendHit(request);
 
         List<EventShortDto> events = publicEventService.getEvents(
-                text, categories, paid, rangeStart, rangeEnd,
-                onlyAvailable, sort, from, size
+                text,
+                categories,
+                paid,
+                rangeStart,
+                rangeEnd,
+                onlyAvailable,
+                sort,
+                from,
+                size
         );
-        sendHit(request);
+
         return ResponseEntity.ok(events);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventDto> getEvent(@PathVariable Long id,
-                                             HttpServletRequest request) {
+    public ResponseEntity<EventDto> getEvent(
+            @PathVariable Long id,
+            HttpServletRequest request
+    ) {
         log.info("GET /events/{}", id);
 
         sendHit(request);
@@ -70,7 +78,7 @@ public class PublicEventController {
                             .build()
             );
         } catch (Exception e) {
-            log.error("Error sending stats: {}", e.getMessage());
+            log.error("Error sending stats", e);
         }
     }
 }
