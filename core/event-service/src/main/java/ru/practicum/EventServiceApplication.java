@@ -17,6 +17,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.practicum.feign")
 @EntityScan(basePackages = {
+        "ru.practicum.category.entity",
         "ru.practicum.web.category.entity",
         "ru.practicum.web.event.entity",
         "ru.practicum.web.admin.entity",

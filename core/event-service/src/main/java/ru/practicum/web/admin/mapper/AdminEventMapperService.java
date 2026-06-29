@@ -2,7 +2,7 @@ package ru.practicum.web.admin.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.practicum.category.entity.Category;
+import ru.practicum.web.category.entity.Category;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.web.event.entity.Event;
 import ru.practicum.web.event.entity.EventStatus;

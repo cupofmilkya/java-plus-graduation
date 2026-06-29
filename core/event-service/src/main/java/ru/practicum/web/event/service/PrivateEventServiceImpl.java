@@ -6,7 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.category.entity.Category;
+import ru.practicum.web.category.entity.Category;
 import ru.practicum.dto.EventDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewEventDto;
