@@ -71,6 +71,11 @@
 				<artifactId>event-service</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>ru.practicum</groupId>
+				<artifactId>request-service</artifactId>
+				<version>${project.version}</version>
+			</dependency>
 
 			<!-- Infrastructure modules -->
 			<dependency>

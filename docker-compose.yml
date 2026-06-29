@@ -53,10 +53,30 @@ services:
       retries: 5
     restart: unless-stopped
 
+  request-db:
+    image: postgres:16.1
+    container_name: ewm-request-db
+    environment:
+      POSTGRES_DB: ewm_requests
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - request-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   user-db-data:
     driver: local
   stats-db-data:
     driver: local
   event-db-data:
+    driver: local
+  request-db-data:
     driver: local

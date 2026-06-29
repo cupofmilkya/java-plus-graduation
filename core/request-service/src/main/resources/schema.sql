@@ -36,21 +36,6 @@ CREATE TABLE IF NOT EXISTS events
 CREATE INDEX IF NOT EXISTS idx_events_initiator ON events(initiator_id);
 CREATE INDEX IF NOT EXISTS idx_events_category ON events(category_id);
 CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
-CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
-
-CREATE TABLE IF NOT EXISTS compilations
-(
-    id     BIGSERIAL PRIMARY KEY,
-    title  VARCHAR(50) NOT NULL UNIQUE,
-    pinned BOOLEAN DEFAULT FALSE
-);
-
-CREATE TABLE IF NOT EXISTS compilation_events
-(
-    compilation_id BIGINT REFERENCES compilations (id) ON DELETE CASCADE,
-    event_id       BIGINT REFERENCES events (id) ON DELETE CASCADE,
-    PRIMARY KEY (compilation_id, event_id)
-);
 
 CREATE TABLE IF NOT EXISTS requests
 (
