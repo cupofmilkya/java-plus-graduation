@@ -86,17 +86,28 @@ public class AdminEventServiceImpl implements AdminEventService {
 
         Event event = getEventOrThrow(eventId);
 
-        // Валидация полей
-        validator.validateTitle(request.getTitle());
-        validator.validateAnnotation(request.getAnnotation());
-        validator.validateDescription(request.getDescription());
-        validator.validateParticipantLimit(request.getParticipantLimit());
+        // Валидация полей (только если они переданы)
+        if (request.getTitle() != null) {
+            validator.validateTitle(request.getTitle());
+        }
+        if (request.getAnnotation() != null) {
+            validator.validateAnnotation(request.getAnnotation());
+        }
+        if (request.getDescription() != null) {
+            validator.validateDescription(request.getDescription());
+        }
+        if (request.getParticipantLimit() != null) {
+            validator.validateParticipantLimit(request.getParticipantLimit());
+        }
 
-        // Парсинг даты
-        LocalDateTime eventDate = dateUtils.parseEventDate(request.getEventDate());
-        validator.validateEventDate(eventDate, request.getEventDate());
+        // Парсинг даты (только если передана)
+        LocalDateTime eventDate = null;
+        if (request.getEventDate() != null) {
+            eventDate = dateUtils.parseEventDate(request.getEventDate());
+            validator.validateEventDate(eventDate, request.getEventDate());
+        }
 
-        // Получение категории
+        // Получение категории (только если передана)
         Category category = getCategoryIfPresent(request.getCategory());
 
         // Обновление полей
@@ -177,6 +188,10 @@ public class AdminEventServiceImpl implements AdminEventService {
                 validator.validateRejectEvent(event);
                 mapperService.applyStateAction(event, stateAction);
                 log.debug("Событие {} отклонено", event.getId());
+                break;
+            case "CANCEL_EVENT":
+                mapperService.applyStateAction(event, stateAction);
+                log.debug("Событие {} отменено", event.getId());
                 break;
             default:
                 log.warn("Некорректное действие со статусом: {}", stateAction);

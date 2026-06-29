@@ -53,6 +53,9 @@ public class AdminEventMapperService {
             case "REJECT_EVENT":
                 event.setStatus(EventStatus.CANCELED);
                 break;
+            case "CANCEL_EVENT":
+                event.setStatus(EventStatus.CANCELED);
+                break;
             default:
                 throw new IllegalArgumentException("Invalid state action: " + stateAction);
         }
