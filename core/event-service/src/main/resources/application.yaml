@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: event-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5435/ewm_events
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        javax.persistence.jdbc.timeout: 30
+        hibernate.connection.autocommit: false
+
+server:
+  port: 0
+
+logging:
+  level:
+    ru.practicum: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.engine.jdbc: DEBUG
+    com.zaxxer.hikari: DEBUG
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    preferIpAddress: true
+    instance-id: ${spring.application.name}:${random.value}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+stats:
+  client:
+    base-url: http://stats-server:9090
+    connect-timeout-millis: 5000
+    read-timeout-millis: 5000
+
+app:
+  default-page-size: 10

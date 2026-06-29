@@ -35,16 +35,98 @@ spring:
               args:
                 parts: 1
 
-        - id: user_public_route
-          uri: lb://USER-SERVICE
+        # ============ EVENT-SERVICE: events & categories (from common) ============
+        # Specific user-event routes MUST come before general /users/** route
+        - id: private_user_events_route
+          uri: lb://EVENT-SERVICE
           predicates:
-            - Path=/users/**
+            - Path=/users/{userId}/events/**
           filters:
             - name: Retry
               args:
                 retries: 3
                 statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
 
+        - id: private_user_requests_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/users/{userId}/requests/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: public_events_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/events/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: public_categories_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/categories/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: admin_categories_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/admin/categories/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: admin_events_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/admin/events/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: event_service_actuator_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/event-service/actuator/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 1
+
+        - id: public_compilations_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/compilations/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: admin_compilations_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/admin/compilations/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        # ============ USER-SERVICE ============
         - id: admin_users_route
           uri: lb://USER-SERVICE
           predicates:
@@ -55,103 +137,20 @@ spring:
                 retries: 3
                 statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
 
+        - id: user_public_route
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/users/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
         - id: user_service_actuator_route
           uri: lb://USER-SERVICE
           predicates:
             - Path=/user-service/actuator/**
-          filters:
-            - name: StripPrefix
-              args:
-                parts: 1
-
-        - id: public_events_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/events/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: public_categories_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/categories/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: public_compilations_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/compilations/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        # ============ MAIN-SERVICE ПРИВАТНЫЕ (ПОЛЬЗОВАТЕЛЬСКИЕ) ============
-        - id: private_user_events_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/users/{userId}/events/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: private_user_requests_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/users/{userId}/requests/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        # ============ MAIN-SERVICE АДМИНИСТРАТИВНЫЕ ============
-        # Удаляем /admin/users/** так как они теперь в USER-SERVICE
-        - id: admin_categories_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/admin/categories/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: admin_compilations_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/admin/compilations/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: admin_events_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/admin/events/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        # ============ MAIN-SERVICE ACTUATOR ============
-        - id: main_service_actuator_route
-          uri: lb://MAIN-SERVICE
-          predicates:
-            - Path=/main-service/actuator/**
           filters:
             - name: StripPrefix
               args:
