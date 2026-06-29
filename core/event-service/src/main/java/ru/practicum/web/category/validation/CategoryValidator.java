@@ -11,7 +11,7 @@ import ru.practicum.web.category.repository.CategoryRepository;
 import ru.practicum.web.event.repository.EventRepository;
 
 @Slf4j
-@Component
+@Component("eventServiceCategoryValidator")
 @RequiredArgsConstructor
 public class CategoryValidator {
 
