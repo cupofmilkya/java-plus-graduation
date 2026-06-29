@@ -9,7 +9,8 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
         "ru.practicum.web",
         "ru.practicum.feign",
         "ru.practicum.exception",
-        "ru.practicum.dto"
+        "ru.practicum.dto",
+        "ru.practicum.validation"
 })
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.practicum.feign")
