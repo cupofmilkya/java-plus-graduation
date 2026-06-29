@@ -18,4 +18,6 @@ public interface AdminEventService {
     );
 
     EventDto updateEvent(Long eventId, UpdateEventAdminRequest updateRequest);
+
+    boolean existsByCategoryId(Long categoryId);
 }

@@ -12,7 +12,9 @@ import ru.practicum.category.mapper.CategoryMapper;
 import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.dto.CategoryDto;
 import ru.practicum.dto.NewCategoryDto;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.feign.EventClient;
 import ru.practicum.validation.CategoryValidator;
 
 import java.util.List;
@@ -25,7 +27,7 @@ import java.util.stream.Collectors;
 public class AdminCategoryServiceImpl implements AdminCategoryService {
 
     private final CategoryRepository categoryRepository;
-//    private final EventRepository eventRepository; //todo на клиент переписать
+    private final EventClient eventClient;
     private final CategoryValidator validator;
 
     @Override
@@ -110,9 +112,10 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
     }
 
     private void checkCategoryNotInUse(Long categoryId) {
-//        if (eventRepository.existsByCategoryId(categoryId)) {
-//            log.warn("Попытка удалить категорию с id={}, которая используется в событиях", categoryId);
-//            throw new ConflictException("The category is not empty");
-//        }
+        Boolean exists = eventClient.existsByCategoryId(categoryId).getBody();
+        if (Boolean.TRUE.equals(exists)) {
+            log.warn("Попытка удалить категорию с id={}, которая используется в событиях", categoryId);
+            throw new ConflictException("The category is not empty");
+        }
     }
 }

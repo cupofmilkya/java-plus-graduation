@@ -112,7 +112,8 @@ public class AdminCategoryServiceImpl implements AdminCategoryService {
     }
 
     private void checkCategoryNotInUse(Long categoryId) {
-        if (eventRepository.existsByCategoryId(categoryId)) {
+        boolean hasEvents = eventRepository.existsByCategoryId(categoryId);
+        if (hasEvents) {
             log.warn("Попытка удалить категорию с id={}, которая используется в событиях", categoryId);
             throw new ConflictException("The category is not empty");
         }

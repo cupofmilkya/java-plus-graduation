@@ -7,6 +7,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.EventDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
+import ru.practicum.feign.AdminEventsClient;
+import ru.practicum.feign.EventClient;
 import ru.practicum.web.admin.service.AdminEventService;
 
 import java.util.List;
@@ -15,7 +17,7 @@ import java.util.List;
 @RequestMapping("/admin/events")
 @RequiredArgsConstructor
 @Validated
-public class AdminEventController {
+public class AdminEventController implements AdminEventsClient, EventClient {
 
     private final AdminEventService service;
 
@@ -40,5 +42,11 @@ public class AdminEventController {
     ) {
         EventDto updated = service.updateEvent(eventId, updateRequest);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/exists-by-category")
+    public ResponseEntity<Boolean> existsByCategoryId(@RequestParam("categoryId") Long categoryId) {
+        boolean exists = service.existsByCategoryId(categoryId);
+        return ResponseEntity.ok(exists);
     }
 }

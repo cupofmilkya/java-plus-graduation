@@ -35,6 +35,18 @@ spring:
               args:
                 parts: 1
 
+        # ============ EVENT-SERVICE: events & categories (from common) ============
+        # Specific user-event routes MUST come before general /users/** route
+        - id: private_user_events_route
+          uri: lb://EVENT-SERVICE
+          predicates:
+            - Path=/users/{userId}/events/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
         # ============ REQUEST-SERVICE: participation requests ============
         # Event-specific request routes MUST come before general /users/{userId}/events/** route
         - id: event_requests_route
@@ -51,27 +63,6 @@ spring:
           uri: lb://REQUEST-SERVICE
           predicates:
             - Path=/users/{userId}/requests/**
-          filters:
-            - name: Retry
-              args:
-                retries: 3
-                statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
-
-        - id: request_service_actuator_route
-          uri: lb://REQUEST-SERVICE
-          predicates:
-            - Path=/request-service/actuator/**
-          filters:
-            - name: StripPrefix
-              args:
-                parts: 1
-
-        # ============ EVENT-SERVICE: events & categories (from common) ============
-        # Specific user-event routes MUST come before general /users/** route
-        - id: private_user_events_route
-          uri: lb://EVENT-SERVICE
-          predicates:
-            - Path=/users/{userId}/events/**
           filters:
             - name: Retry
               args:
@@ -148,6 +139,7 @@ spring:
                 statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
 
         # ============ USER-SERVICE ============
+        # NOTE: user_public_route MUST come AFTER specific /users/{userId}/events/** routes
         - id: admin_users_route
           uri: lb://USER-SERVICE
           predicates:
@@ -167,6 +159,15 @@ spring:
               args:
                 retries: 3
                 statuses: SERVICE_UNAVAILABLE, BAD_GATEWAY
+
+        - id: request_service_actuator_route
+          uri: lb://REQUEST-SERVICE
+          predicates:
+            - Path=/request-service/actuator/**
+          filters:
+            - name: StripPrefix
+              args:
+                parts: 1
 
         - id: user_service_actuator_route
           uri: lb://USER-SERVICE

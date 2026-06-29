@@ -6,7 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.category.entity.Category;
 import ru.practicum.dto.EventDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewEventDto;
@@ -15,6 +15,7 @@ import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.feign.CategoryClient;
 import ru.practicum.statsclient.StatsClient;
 import ru.practicum.validation.ValidationConstants;
 import ru.practicum.web.event.entity.Event;
@@ -38,7 +39,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
-    private final CategoryRepository categoryRepository;
+    private final CategoryClient categoryClient;
     private final StatsClient statsClient;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(ValidationConstants.DATE_TIME_FORMAT);
 
@@ -80,11 +81,14 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                     return new NotFoundException("User with id=" + userId + " was not found");
                 });
 
-        var category = categoryRepository.findById(dto.getCategory())
-                .orElseThrow(() -> {
-                    log.warn("Категория с id={} не найдена", dto.getCategory());
-                    return new NotFoundException("Category with id=" + dto.getCategory() + " was not found");
-                });
+        var categoryDto = categoryClient.getById(dto.getCategory()).getBody();
+        if (categoryDto == null) {
+            log.warn("Категория с id={} не найдена", dto.getCategory());
+            throw new NotFoundException("Category with id=" + dto.getCategory() + " was not found");
+        }
+        var category = new Category();
+        category.setId(categoryDto.getId());
+        category.setName(categoryDto.getName());
 
         LocalDateTime eventDate = parseDateTime(dto.getEventDate());
         if (eventDate.isBefore(LocalDateTime.now().plusHours(ValidationConstants.EVENT_HOURS_BEFORE_START))) {
@@ -197,11 +201,14 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             log.debug("Обновлена локация события");
         }
         if (updateRequest.getCategory() != null) {
-            var category = categoryRepository.findById(updateRequest.getCategory())
-                    .orElseThrow(() -> {
-                        log.warn("Категория с id={} не найдена", updateRequest.getCategory());
-                        return new NotFoundException("Category with id=" + updateRequest.getCategory() + " was not found");
-                    });
+            var categoryDto = categoryClient.getById(updateRequest.getCategory()).getBody();
+            if (categoryDto == null) {
+                log.warn("Категория с id={} не найдена", updateRequest.getCategory());
+                throw new NotFoundException("Category with id=" + updateRequest.getCategory() + " was not found");
+            }
+            var category = new Category();
+            category.setId(categoryDto.getId());
+            category.setName(categoryDto.getName());
             event.setCategory(category);
             log.debug("Обновлена категория события");
         }

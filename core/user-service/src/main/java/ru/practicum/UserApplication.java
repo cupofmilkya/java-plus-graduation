@@ -5,7 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+        "ru.practicum.web",
+        "ru.practicum.feign",
+        "ru.practicum.exception",
+        "ru.practicum.dto"
+})
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.practicum.feign")
 public class UserApplication {
