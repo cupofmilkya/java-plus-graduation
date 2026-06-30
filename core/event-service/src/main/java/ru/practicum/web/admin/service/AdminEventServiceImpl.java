@@ -82,13 +82,15 @@ public class AdminEventServiceImpl implements AdminEventService {
 
     @Override
     public EventDto updateEvent(Long eventId, UpdateEventAdminRequest request) {
-        log.info("Обновление события с id={} администратором. Данные: {}", eventId, request);
+        log.info("Обновление события с id={} администратором", eventId);
 
         Event event = getEventOrThrow(eventId);
+        log.info("Найдено событие с id={}, status={}", event.getId(), event.getStatus());
 
         if (request.getStateAction() != null) {
-            log.debug("Обработка действия со статусом: {}", request.getStateAction());
+            log.info("Обработка stateAction={} для события с id={}", request.getStateAction(), eventId);
             handleStateAction(event, request.getStateAction());
+            log.info("Статус события с id={} изменен на {}", eventId, event.getStatus());
         }
 
         if (request.getTitle() != null) {
@@ -115,7 +117,7 @@ public class AdminEventServiceImpl implements AdminEventService {
         mapperService.updateEventFields(event, request, eventDate, category);
 
         Event savedEvent = eventRepository.save(event);
-        log.debug("Событие сохранено с id={}", savedEvent.getId());
+        log.info("Событие с id={} обновлено, новый статус={}", savedEvent.getId(), savedEvent.getStatus());
 
         Long views = statsService.getViews(savedEvent);
         savedEvent.setViews(views);

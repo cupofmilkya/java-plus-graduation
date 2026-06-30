@@ -116,7 +116,8 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                 .build();
 
         Event saved = eventRepository.save(event);
-        log.info("Событие создано с id={}", saved.getId());
+        log.info("Событие создано с id={}, status={}, title={}", saved.getId(), saved.getStatus(), saved.getTitle());
+        
         return EventMapper.toDto(saved);
     }
 
