@@ -80,14 +80,8 @@ public class RequestValidator {
     public void validateEventForRequestUpdate(Event event) {
         log.debug("Валидация события для обновления заявок: eventId={}", event.getId());
 
-        if (event.getParticipantLimit() == 0) {
-            log.warn("Для события {} лимит участников не ограничен", event.getId());
-            throw new ConflictException("The participant limit has been reached");
-        }
-        if (!event.getRequestModeration()) {
-            log.warn("Для события {} не требуется модерация заявок", event.getId());
-            throw new ConflictException("The participant limit has been reached");
-        }
+        // participantLimit == 0 means unlimited - no validation needed
+        // requestModeration == false means requests are auto-confirmed, but owner can still manage them
 
         log.debug("Валидация события для обновления заявок успешно пройдена");
     }
@@ -128,13 +122,14 @@ public class RequestValidator {
                 event.getId(), RequestStatus.CONFIRMED);
         int participantLimit = event.getParticipantLimit();
 
-        if (confirmedRequests >= participantLimit) {
+        // participantLimit == 0 means unlimited
+        if (participantLimit > 0 && confirmedRequests >= participantLimit) {
             log.warn("Достигнут лимит участников для события {}. Текущее количество: {}",
                     event.getId(), confirmedRequests);
             throw new ConflictException("The participant limit has been reached");
         }
 
-        int availableSlots = participantLimit - confirmedRequests;
+        int availableSlots = participantLimit == 0 ? Integer.MAX_VALUE : participantLimit - confirmedRequests;
         log.debug("Доступно мест для события {}: {}", event.getId(), availableSlots);
         return availableSlots;
     }
