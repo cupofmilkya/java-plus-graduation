@@ -50,7 +50,7 @@ management:
 
 stats:
   client:
-    base-url: http://stats-server:9090
+    base-url: http://stats-server
     connect-timeout-millis: 5000
     read-timeout-millis: 5000
 
