@@ -7,12 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.practicum.web.category.entity.Category;
-import ru.practicum.dto.CategoryDto;
+import ru.practicum.web.category.repository.CategoryRepository;
 import ru.practicum.dto.EventDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.NotFoundException;
-import ru.practicum.feign.CategoryClient;
 import ru.practicum.validation.ValidationConstants;
 import ru.practicum.web.admin.mapper.AdminEventMapperService;
 import ru.practicum.web.admin.utils.DateUtils;
@@ -35,7 +34,7 @@ import java.util.List;
 public class AdminEventServiceImpl implements AdminEventService {
 
     private final EventRepository eventRepository;
-    private final CategoryClient categoryClient;
+    private final CategoryRepository categoryRepository;
     private final StatsService statsService;
     private final AdminEventValidator validator;
     private final AdminEventMapperService mapperService;
@@ -166,15 +165,11 @@ public class AdminEventServiceImpl implements AdminEventService {
         if (categoryId == null) {
             return null;
         }
-        CategoryDto categoryDto = categoryClient.getById(categoryId).getBody();
-        if (categoryDto == null) {
-            log.warn("Категория с id={} не найдена", categoryId);
-            throw new NotFoundException("Category with id=" + categoryId + " not found");
-        }
-        Category category = new Category();
-        category.setId(categoryDto.getId());
-        category.setName(categoryDto.getName());
-        return category;
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> {
+                    log.warn("Категория с id={} не найдена", categoryId);
+                    return new NotFoundException("Category with id=" + categoryId + " not found");
+                });
     }
 
     private void handleStateAction(Event event, String stateAction) {

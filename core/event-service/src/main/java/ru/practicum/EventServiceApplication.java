@@ -5,15 +5,24 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import ru.practicum.validation.CategoryValidator;
 
-@SpringBootApplication(scanBasePackages = {
-        "ru.practicum.web",
-        "ru.practicum.feign",
-        "ru.practicum.exception",
-        "ru.practicum.dto",
-        "ru.practicum.validation"
-})
+@SpringBootApplication
+@ComponentScan(
+        basePackages = {
+                "ru.practicum.web",
+                "ru.practicum.feign",
+                "ru.practicum.exception",
+                "ru.practicum.dto",
+                "ru.practicum.validation"
+        },
+        excludeFilters = {
+                @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = CategoryValidator.class)
+        }
+)
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.practicum.feign")
 @EntityScan(basePackages = {
@@ -25,7 +34,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(basePackages = {
         "ru.practicum.web.category.repository",
         "ru.practicum.web.event.repository",
-        "ru.practicum.web.admin.repository"
+        "ru.practicum.web.admin.repository",
+        "ru.practicum.web.user.repository"
 })
 public class EventServiceApplication {
     public static void main(String[] args) {
