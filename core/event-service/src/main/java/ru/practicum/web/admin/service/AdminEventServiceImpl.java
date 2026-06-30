@@ -11,6 +11,7 @@ import ru.practicum.web.category.repository.CategoryRepository;
 import ru.practicum.dto.EventDto;
 import ru.practicum.dto.UpdateEventAdminRequest;
 import ru.practicum.exception.BadRequestException;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.validation.ValidationConstants;
 import ru.practicum.web.admin.mapper.AdminEventMapperService;
@@ -170,17 +171,28 @@ public class AdminEventServiceImpl implements AdminEventService {
     private void handleStateAction(Event event, String stateAction) {
         switch (stateAction) {
             case "PUBLISH_EVENT":
-                validator.validatePublishEvent(event);
-                mapperService.applyStateAction(event, stateAction);
+                if (event.getStatus() != EventStatus.PENDING) {
+                    throw new ConflictException("Cannot publish the event because it's not in PENDING state. Current status: " + event.getStatus());
+                }
+                if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(ValidationConstants.EVENT_PUBLISH_HOURS_BEFORE))) {
+                    throw new ConflictException("Cannot publish event because event date is too soon");
+                }
+                event.setStatus(EventStatus.PUBLISHED);
+                event.setPublishedOn(LocalDateTime.now());
                 log.debug("Событие {} опубликовано", event.getId());
                 break;
             case "REJECT_EVENT":
-                validator.validateRejectEvent(event);
-                mapperService.applyStateAction(event, stateAction);
+                if (event.getStatus() == EventStatus.PUBLISHED) {
+                    throw new ConflictException("Cannot reject already published event");
+                }
+                event.setStatus(EventStatus.CANCELED);
                 log.debug("Событие {} отклонено", event.getId());
                 break;
             case "CANCEL_EVENT":
-                mapperService.applyStateAction(event, stateAction);
+                if (event.getStatus() == EventStatus.PUBLISHED) {
+                    throw new ConflictException("Cannot cancel already published event");
+                }
+                event.setStatus(EventStatus.CANCELED);
                 log.debug("Событие {} отменено", event.getId());
                 break;
             default:

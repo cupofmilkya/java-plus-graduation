@@ -8,8 +8,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.CategoryDto;
 import ru.practicum.dto.NewCategoryDto;
+import ru.practicum.exception.ConflictException;
 import ru.practicum.feign.AdminCategoriesClient;
 import ru.practicum.web.category.service.CategoryService;
+import ru.practicum.web.event.repository.EventRepository;
 
 import java.util.List;
 
@@ -20,6 +22,7 @@ import java.util.List;
 public class AdminCategoriesController implements AdminCategoriesClient {
 
     private final CategoryService categoryService;
+    private final EventRepository eventRepository;
 
     @PostMapping
     public ResponseEntity<CategoryDto> create(@Valid @RequestBody NewCategoryDto dto) {
@@ -38,6 +41,9 @@ public class AdminCategoriesController implements AdminCategoriesClient {
 
     @DeleteMapping("/{catId}")
     public ResponseEntity<Void> delete(@PathVariable("catId") Long catId) {
+        if (eventRepository.existsByCategoryId(catId)) {
+            throw new ConflictException("The category is not empty");
+        }
         categoryService.delete(catId);
         return ResponseEntity.noContent().build();
     }

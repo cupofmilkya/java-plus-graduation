@@ -11,7 +11,7 @@ import ru.practicum.validation.ValidationConstants;
 import java.util.List;
 
 @FeignClient(
-        name = "category-service",
+        name = "event-service",
         contextId = "adminCategoriesClient",
         path = "/admin/categories"
 )

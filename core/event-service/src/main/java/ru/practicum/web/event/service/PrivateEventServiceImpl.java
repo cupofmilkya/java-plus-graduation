@@ -10,10 +10,12 @@ import ru.practicum.dto.EventDto;
 import ru.practicum.dto.EventShortDto;
 import ru.practicum.dto.NewEventDto;
 import ru.practicum.dto.UpdateEventUserRequest;
+import ru.practicum.dto.UserDto;
 import ru.practicum.dto.ViewStatsDto;
 import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.feign.UserServiceClient;
 import ru.practicum.web.category.repository.CategoryRepository;
 import ru.practicum.statsclient.StatsClient;
 import ru.practicum.validation.ValidationConstants;
@@ -21,6 +23,7 @@ import ru.practicum.web.event.entity.Event;
 import ru.practicum.web.event.entity.EventStatus;
 import ru.practicum.web.event.mapper.EventMapper;
 import ru.practicum.web.event.repository.EventRepository;
+import ru.practicum.web.user.entity.User;
 import ru.practicum.web.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
@@ -40,14 +43,15 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final StatsClient statsClient;
+    private final UserServiceClient userServiceClient;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(ValidationConstants.DATE_TIME_FORMAT);
 
     @Override
     public List<EventShortDto> getEvents(Long userId, int from, int size) {
         log.info("Запрос списка событий пользователя с id={}, from={}, size={}", userId, from, size);
 
-        if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь с id={} не найден", userId);
+        if (!userServiceClient.userExists(userId)) {
+            log.warn("Пользователь с id={} не найден в user-service", userId);
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
 
@@ -74,11 +78,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     public EventDto addEvent(Long userId, NewEventDto dto) {
         log.info("Создание нового события пользователем с id={}", userId);
 
-        var user = userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с id={} не найден", userId);
-                    return new NotFoundException("User with id=" + userId + " was not found");
-                });
+        if (!userServiceClient.userExists(userId)) {
+            log.warn("Пользователь с id={} не найден в user-service", userId);
+            throw new NotFoundException("User with id=" + userId + " was not found");
+        }
+
+        // Получаем или создаем пользователя в локальной БД
+        User user = getUserOrCreate(userId);
 
         var category = categoryRepository.findById(dto.getCategory())
                 .orElseThrow(() -> {
@@ -118,8 +124,8 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     public EventDto getEvent(Long userId, Long eventId) {
         log.info("Запрос события с id={} для пользователя с id={}", eventId, userId);
 
-        if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь с id={} не найден", userId);
+        if (!userServiceClient.userExists(userId)) {
+            log.warn("Пользователь с id={} не найден в user-service", userId);
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
 
@@ -139,8 +145,8 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     public EventDto updateEvent(Long userId, Long eventId, UpdateEventUserRequest updateRequest) {
         log.info("Обновление события с id={} пользователем с id={}", eventId, userId);
 
-        if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь с id={} не найден", userId);
+        if (!userServiceClient.userExists(userId)) {
+            log.warn("Пользователь с id={} не найден в user-service", userId);
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
 
@@ -226,6 +232,23 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         log.info("Событие с id={} успешно обновлено", eventId);
         return EventMapper.toDto(updated);
+    }
+
+    private User getUserOrCreate(Long userId) {
+        return userRepository.findById(userId).orElseGet(() -> {
+            log.info("Пользователь с id={} не найден в локальной БД, запрашиваем из user-service", userId);
+            List<UserDto> users = userServiceClient.getUsers(List.of(userId));
+            if (users.isEmpty()) {
+                throw new NotFoundException("User with id=" + userId + " was not found");
+            }
+            UserDto userDto = users.get(0);
+            User user = User.builder()
+                    .id(userDto.getId())
+                    .name(userDto.getName())
+                    .email(userDto.getEmail())
+                    .build();
+            return userRepository.save(user);
+        });
     }
 
     private LocalDateTime parseDateTime(String dateTimeStr) {
