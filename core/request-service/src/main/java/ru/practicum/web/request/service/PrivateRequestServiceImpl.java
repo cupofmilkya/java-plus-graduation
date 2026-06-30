@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.feign.UserServiceClient;
+import ru.practicum.dto.UserDto;
 import ru.practicum.web.event.entity.Event;
 import ru.practicum.web.event.repository.EventRepository;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateRequest;
@@ -34,6 +36,7 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     private final RequestValidator validator;
     private final RequestMapperService mapperService;
     private final RequestStatusUpdateService statusUpdateService;
+    private final UserServiceClient userServiceClient;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {
@@ -135,17 +138,31 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
 
     private void checkUserExists(Long userId) {
         if (!userRepository.existsById(userId)) {
-            log.warn("Пользователь с id={} не найден", userId);
-            throw new NotFoundException("User with id=" + userId + " was not found");
+            log.info("Пользователь с id={} не найден в локальной БД, запрашиваем из user-service", userId);
+            getUserOrCreate(userId);
         }
     }
 
     private User getUserOrThrow(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> {
-                    log.warn("Пользователь с id={} не найден", userId);
-                    return new NotFoundException("User with id=" + userId + " was not found");
-                });
+        return userRepository.findById(userId).orElseGet(() -> {
+            log.info("Пользователь с id={} не найден в локальной БД, запрашиваем из user-service", userId);
+            return getUserOrCreate(userId);
+        });
+    }
+
+    private User getUserOrCreate(Long userId) {
+        List<UserDto> users = userServiceClient.getUsers(List.of(userId));
+        if (users.isEmpty()) {
+            log.warn("Пользователь с id={} не найден в user-service", userId);
+            throw new NotFoundException("User with id=" + userId + " was not found");
+        }
+        UserDto userDto = users.get(0);
+        User user = User.builder()
+                .id(userDto.getId())
+                .name(userDto.getName())
+                .email(userDto.getEmail())
+                .build();
+        return userRepository.save(user);
     }
 
     private Event getEventOrThrow(Long eventId) {
