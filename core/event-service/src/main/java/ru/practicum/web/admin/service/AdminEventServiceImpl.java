@@ -85,7 +85,11 @@ public class AdminEventServiceImpl implements AdminEventService {
 
         Event event = getEventOrThrow(eventId);
 
-        // Валидация полей (только если они переданы)
+        if (request.getStateAction() != null) {
+            log.debug("Обработка действия со статусом: {}", request.getStateAction());
+            handleStateAction(event, request.getStateAction());
+        }
+
         if (request.getTitle() != null) {
             validator.validateTitle(request.getTitle());
         }
@@ -99,24 +103,15 @@ public class AdminEventServiceImpl implements AdminEventService {
             validator.validateParticipantLimit(request.getParticipantLimit());
         }
 
-        // Парсинг даты (только если передана)
         LocalDateTime eventDate = null;
         if (request.getEventDate() != null) {
             eventDate = dateUtils.parseEventDate(request.getEventDate());
             validator.validateEventDate(eventDate, request.getEventDate());
         }
 
-        // Получение категории (только если передана)
         Category category = getCategoryIfPresent(request.getCategory());
 
-        // Обновление полей
         mapperService.updateEventFields(event, request, eventDate, category);
-
-        // Обработка состояния
-        if (request.getStateAction() != null) {
-            log.debug("Обработка действия со статусом: {}", request.getStateAction());
-            handleStateAction(event, request.getStateAction());
-        }
 
         Event savedEvent = eventRepository.save(event);
         log.debug("Событие сохранено с id={}", savedEvent.getId());

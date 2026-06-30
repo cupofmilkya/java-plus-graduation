@@ -155,6 +155,20 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             throw new ConflictException("Only pending or canceled events can be changed");
         }
 
+        if (updateRequest.getStateAction() != null) {
+            log.debug("Обработка действия со статусом: {}", updateRequest.getStateAction());
+            switch (updateRequest.getStateAction()) {
+                case "SEND_TO_REVIEW":
+                    event.setStatus(EventStatus.PENDING);
+                    log.debug("Событие отправлено на модерацию");
+                    break;
+                case "CANCEL_REVIEW":
+                    event.setStatus(EventStatus.CANCELED);
+                    log.debug("Модерация события отменена");
+                    break;
+            }
+        }
+
         if (updateRequest.getTitle() != null) {
             event.setTitle(updateRequest.getTitle());
             log.debug("Обновлен заголовок события");
@@ -204,20 +218,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                     });
             event.setCategory(category);
             log.debug("Обновлена категория события");
-        }
-
-        if (updateRequest.getStateAction() != null) {
-            log.debug("Обработка действия со статусом: {}", updateRequest.getStateAction());
-            switch (updateRequest.getStateAction()) {
-                case "SEND_TO_REVIEW":
-                    event.setStatus(EventStatus.PENDING);
-                    log.debug("Событие отправлено на модерацию");
-                    break;
-                case "CANCEL_REVIEW":
-                    event.setStatus(EventStatus.CANCELED);
-                    log.debug("Модерация события отменена");
-                    break;
-            }
         }
 
         Event updated = eventRepository.save(event);
