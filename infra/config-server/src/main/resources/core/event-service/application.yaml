@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://ewm-event-db:5432/ewm_events
+    url: jdbc:postgresql://localhost:5432/ewm_events
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
