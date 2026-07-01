@@ -3,7 +3,7 @@ spring:
     import: optional:configserver:http://localhost:8888
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/ewm_main
+    url: jdbc:postgresql://localhost:5435/ewm_events
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver

@@ -29,7 +29,9 @@ CREATE TABLE events
     status             TEXT CHECK (status IN ('PENDING', 'PUBLISHED', 'CANCELED')),
     created_on         TIMESTAMP,
     published_on       TIMESTAMP,
-    confirmed_requests BIGINT DEFAULT 0
+    confirmed_requests BIGINT DEFAULT 0,
+    lat                DOUBLE PRECISION,
+    lon                DOUBLE PRECISION
 );
 
 -- Таблица подборок (compilations)
