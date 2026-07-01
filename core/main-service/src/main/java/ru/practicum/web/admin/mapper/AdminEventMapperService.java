@@ -27,6 +27,9 @@ public class AdminEventMapperService {
         if (eventDate != null) {
             event.setEventDate(eventDate);
         }
+        if (request.getLocation() != null) {
+            event.setLocation(request.getLocation());
+        }
         if (request.getPaid() != null) {
             event.setPaid(request.getPaid());
         }

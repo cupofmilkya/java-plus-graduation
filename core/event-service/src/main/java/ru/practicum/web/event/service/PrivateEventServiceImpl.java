@@ -76,14 +76,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     @Override
     public EventDto addEvent(Long userId, NewEventDto dto) {
-        log.info("Создание нового события пользователем с id={}", userId);
+        log.info("Создание события: userId={}, title={}", userId, dto.getTitle());
 
         if (!userServiceClient.userExists(userId)) {
-            log.warn("Пользователь с id={} не найден в user-service", userId);
+            log.warn("Пользователь не найден в user-service: id={}", userId);
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
 
-        // Получаем или создаем пользователя в локальной БД
         User user = getUserOrCreate(userId);
 
         var category = categoryRepository.findById(dto.getCategory())
@@ -116,7 +115,9 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                 .build();
 
         Event saved = eventRepository.save(event);
-        log.info("Событие создано с id={}, status={}, title={}", saved.getId(), saved.getStatus(), saved.getTitle());
+        log.info("Создание события: id={}, status={}, title={}, initiatorId={}",
+                 saved.getId(), saved.getStatus(), saved.getTitle(), 
+                 saved.getInitiator() != null ? saved.getInitiator().getId() : "null");
         
         return EventMapper.toDto(saved);
     }
@@ -132,15 +133,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> {
-                    log.warn("Событие с id={} для пользователя {} не найдено", eventId, userId);
-                    log.warn("Проверка: существует ли событие с id={} в БД?", eventId);
-                    eventRepository.findById(eventId).ifPresentOrElse(
-                        e -> log.warn("Событие id={} найдено, но initiatorId={} (ожидался {})", 
-                                      eventId, 
-                                      e.getInitiator() != null ? e.getInitiator().getId() : "null",
-                                      userId),
-                        () -> log.warn("Событие с id={} не найдено в БД", eventId)
-                    );
+                    log.warn("Событие не найдено: id={}, userId={}", eventId, userId);
                     return new NotFoundException("Event with id=" + eventId + " was not found");
                 });
 
@@ -246,17 +239,27 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private User getUserOrCreate(Long userId) {
         return userRepository.findById(userId).orElseGet(() -> {
             log.info("Пользователь с id={} не найден в локальной БД, запрашиваем из user-service", userId);
-            List<UserDto> users = userServiceClient.getUsers(List.of(userId));
-            if (users.isEmpty()) {
+            try {
+                List<UserDto> users = userServiceClient.getUsers(List.of(userId));
+                if (users == null || users.isEmpty()) {
+                    log.error("Пользователь с id={} НЕ НАЙДЕН в user-service (пустой список)", userId);
+                    throw new NotFoundException("User with id=" + userId + " was not found");
+                }
+                UserDto userDto = users.get(0);
+                log.info("Получены данные пользователя из user-service: id={}, name={}, email={}",
+                         userDto.getId(), userDto.getName(), userDto.getEmail());
+                User user = User.builder()
+                        .id(userDto.getId())
+                        .name(userDto.getName())
+                        .email(userDto.getEmail())
+                        .build();
+                User saved = userRepository.save(user);
+                log.info("Пользователь сохранен в локальной БД с id={}", saved.getId());
+                return saved;
+            } catch (Exception e) {
+                log.error("Ошибка получения пользователя из user-service: {}", e.getMessage(), e);
                 throw new NotFoundException("User with id=" + userId + " was not found");
             }
-            UserDto userDto = users.get(0);
-            User user = User.builder()
-                    .id(userDto.getId())
-                    .name(userDto.getName())
-                    .email(userDto.getEmail())
-                    .build();
-            return userRepository.save(user);
         });
     }
 

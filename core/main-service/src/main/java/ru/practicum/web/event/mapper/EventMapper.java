@@ -168,7 +168,6 @@ public class EventMapper {
         dto.setPaid(event.getPaid() != null ? event.getPaid() : false);
         dto.setViews(event.getViews() != null ? event.getViews() : ValidationConstants.DEFAULT_VIEWS);
         dto.setConfirmedRequests(event.getConfirmedRequests() != null ? event.getConfirmedRequests() : ValidationConstants.DEFAULT_CONFIRMED_REQUESTS);
-        dto.setLocation(event.getLocation());
 
         CategoryDto categoryDto = new CategoryDto();
         if (event.getCategory() != null) {

@@ -2,6 +2,7 @@ package ru.practicum.web.admin.entity;
 
 import lombok.Data;
 import jakarta.validation.constraints.Size;
+import ru.practicum.web.event.entity.Location;
 
 @Data
 public class UpdateEventAdminRequest {
@@ -14,6 +15,8 @@ public class UpdateEventAdminRequest {
     private String description;
 
     private String eventDate;
+
+    private Location location;
 
     private Boolean paid;
 
