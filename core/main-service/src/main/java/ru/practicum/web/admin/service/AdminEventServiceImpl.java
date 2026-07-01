@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.web.admin.entity.UpdateEventAdminRequest;
 import ru.practicum.web.admin.mapper.AdminEventMapperService;
 import ru.practicum.web.admin.repository.CategoryRepository;
@@ -21,7 +22,6 @@ import ru.practicum.web.exception.BadRequestException;
 import ru.practicum.web.exception.NotFoundException;
 import ru.practicum.web.validation.ValidationConstants;
 
-import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;

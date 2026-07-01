@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.web.category.entity.Category;
 import ru.practicum.web.category.repository.CategoryRepository;
 import ru.practicum.dto.EventDto;
@@ -23,7 +24,6 @@ import ru.practicum.web.event.mapper.EventMapper;
 import ru.practicum.web.event.repository.EventRepository;
 import ru.practicum.web.stats.StatsService;
 
-import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
