@@ -1,8 +1,3 @@
-DROP TABLE IF EXISTS compilation_events;
-DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS compilations;
-DROP TABLE IF EXISTS categories;
-
 CREATE TABLE IF NOT EXISTS categories
 (
     id   BIGSERIAL PRIMARY KEY,

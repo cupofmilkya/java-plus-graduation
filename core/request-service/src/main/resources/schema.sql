@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS requests;
-
 CREATE TABLE IF NOT EXISTS requests
 (
     id           BIGSERIAL PRIMARY KEY,

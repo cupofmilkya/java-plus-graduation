@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS endpoint_hits;
-
 CREATE TABLE IF NOT EXISTS endpoint_hits (
     id BIGSERIAL PRIMARY KEY,
     app VARCHAR(255) NOT NULL,
