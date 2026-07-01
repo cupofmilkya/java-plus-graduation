@@ -6,7 +6,7 @@ spring:
     name: user-service
 
   datasource:
-    url: jdbc:postgresql://localhost:5435/ewm_events
+    url: jdbc:postgresql://localhost:5434/ewm_users
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
