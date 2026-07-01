@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 @Slf4j
 @Service
@@ -40,6 +43,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final StatsClient statsClient;
+    private final DataSource dataSource;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(ValidationConstants.DATE_TIME_FORMAT);
 
     @Override
@@ -73,6 +77,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     @Override
     public EventDto addEvent(Long userId, NewEventDto dto) {
         log.info("Создание нового события пользователем с id={}", userId);
+
+        try (Connection conn = dataSource.getConnection()) {
+            String url = conn.getMetaData().getURL();
+            log.debug("DataSource URL for main-service (addEvent): {}", url);
+        } catch (SQLException e) {
+            log.warn("Unable to determine DataSource URL: {}", e.getMessage());
+        }
 
         var user = userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -111,6 +122,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         Event saved = eventRepository.save(event);
         log.info("Событие создано с id={}", saved.getId());
+        log.debug("After save: eventRepository.existsById({}) = {}", saved.getId(), eventRepository.existsById(saved.getId()));
         return EventMapper.toDto(saved);
     }
 

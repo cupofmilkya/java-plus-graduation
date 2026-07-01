@@ -25,6 +25,9 @@ import ru.practicum.web.validation.ValidationConstants;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 @Slf4j
 @Service
@@ -38,6 +41,7 @@ public class AdminEventServiceImpl implements AdminEventService {
     private final AdminEventValidator validator;
     private final AdminEventMapperService mapperService;
     private final DateUtils dateUtils;
+    private final DataSource dataSource;
 
     @Override
     public List<EventDto> getEvents(List<Long> users,
@@ -82,6 +86,13 @@ public class AdminEventServiceImpl implements AdminEventService {
     public EventDto updateEvent(Long eventId, UpdateEventAdminRequest request) {
         log.info("Обновление события с id={} администратором. Данные: {}", eventId, request);
 
+        try (Connection conn = dataSource.getConnection()) {
+            String url = conn.getMetaData().getURL();
+            log.debug("DataSource URL for main-service (admin update): {}", url);
+        } catch (SQLException e) {
+            log.warn("Unable to determine DataSource URL: {}", e.getMessage());
+        }
+
         Event event = getEventOrThrow(eventId);
 
         // Валидация полей
@@ -108,6 +119,7 @@ public class AdminEventServiceImpl implements AdminEventService {
 
         Event savedEvent = eventRepository.save(event);
         log.debug("Событие сохранено с id={}", savedEvent.getId());
+        log.debug("After save (admin): eventRepository.existsById({}) = {}", savedEvent.getId(), eventRepository.existsById(savedEvent.getId()));
 
         Long views = statsService.getViews(savedEvent);
         savedEvent.setViews(views);

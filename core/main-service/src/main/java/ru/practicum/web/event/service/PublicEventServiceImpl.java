@@ -18,7 +18,7 @@ import ru.practicum.web.event.repository.EventRepository;
 import ru.practicum.web.event.repository.EventSpecification;
 import ru.practicum.web.exception.BadRequestException;
 import ru.practicum.web.exception.NotFoundException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.web.validation.ValidationConstants;
 
 import java.time.LocalDateTime;

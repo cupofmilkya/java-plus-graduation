@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 @Slf4j
 @Service
@@ -44,6 +47,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private final CategoryRepository categoryRepository;
     private final StatsClient statsClient;
     private final UserServiceClient userServiceClient;
+    private final DataSource dataSource;
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(ValidationConstants.DATE_TIME_FORMAT);
 
     @Override
@@ -77,6 +81,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     @Override
     public EventDto addEvent(Long userId, NewEventDto dto) {
         log.info("Создание события: userId={}, title={}", userId, dto.getTitle());
+
+        try (Connection conn = dataSource.getConnection()) {
+            String url = conn.getMetaData().getURL();
+            log.debug("DataSource URL for event-service (addEvent): {}", url);
+        } catch (SQLException e) {
+            log.warn("Unable to determine DataSource URL: {}", e.getMessage());
+        }
 
         if (!userServiceClient.userExists(userId)) {
             log.warn("Пользователь не найден в user-service: id={}", userId);
@@ -118,7 +129,8 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Создание события: id={}, status={}, title={}, initiatorId={}",
                  saved.getId(), saved.getStatus(), saved.getTitle(), 
                  saved.getInitiator() != null ? saved.getInitiator().getId() : "null");
-        
+        log.debug("After save (event-service): eventRepository.existsById({}) = {}", saved.getId(), eventRepository.existsById(saved.getId()));
+
         return EventMapper.toDto(saved);
     }
 

@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.feign.UserServiceClient;
@@ -33,6 +36,7 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+    private final DataSource dataSource;
     private final RequestValidator validator;
     private final RequestMapperService mapperService;
     private final RequestStatusUpdateService statusUpdateService;
@@ -56,6 +60,14 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
         log.info("Создание заявки на участие в событии с id={} от пользователя с id={}", eventId, userId);
 
         User user = getUserOrThrow(userId);
+        try (Connection conn = dataSource.getConnection()) {
+            String url = conn.getMetaData().getURL();
+            log.debug("DataSource URL for request-service: {}", url);
+        } catch (SQLException e) {
+            log.warn("Unable to determine DataSource URL: {}", e.getMessage());
+        }
+        log.debug("eventRepository.existsById({}) = {}", eventId, eventRepository.existsById(eventId));
+
         Event event = getEventOrThrow(eventId);
 
         validator.validateAddRequest(user, event, userId, eventId);
