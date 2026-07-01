@@ -19,5 +19,7 @@ public interface AdminEventService {
 
     EventDto updateEvent(Long eventId, UpdateEventAdminRequest updateRequest);
 
+    void updateConfirmedRequests(Long eventId, int delta);
+
     boolean existsByCategoryId(Long categoryId);
 }

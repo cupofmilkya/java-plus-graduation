@@ -12,7 +12,9 @@ import ru.practicum.exception.NotFoundException;
 import ru.practicum.feign.UserServiceClient;
 import ru.practicum.dto.UserDto;
 import ru.practicum.web.event.entity.Event;
-import ru.practicum.web.event.repository.EventRepository;
+import ru.practicum.dto.EventDto;
+import ru.practicum.feign.PublicEventClient;
+import ru.practicum.feign.AdminEventsClient;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.web.request.dto.ParticipationRequestDto;
@@ -35,7 +37,8 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
 
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final EventRepository eventRepository;
+    private final PublicEventClient publicEventClient;
+    private final AdminEventsClient adminEventsClient;
     private final DataSource dataSource;
     private final RequestValidator validator;
     private final RequestMapperService mapperService;
@@ -66,8 +69,6 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
         } catch (SQLException e) {
             log.warn("Unable to determine DataSource URL: {}", e.getMessage());
         }
-        log.debug("eventRepository.existsById({}) = {}", eventId, eventRepository.existsById(eventId));
-
         Event event = getEventOrThrow(eventId);
 
         validator.validateAddRequest(user, event, userId, eventId);
@@ -77,10 +78,9 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
         log.info("Заявка создана с id={}, статус: {}", saved.getId(), saved.getStatus());
 
         if (saved.getStatus() == RequestStatus.CONFIRMED) {
-            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
-            eventRepository.save(event);
-            log.debug("Количество подтвержденных заявок для события {} увеличено до {}",
-                    eventId, event.getConfirmedRequests());
+            // notify event-service to increment confirmed requests
+            adminEventsClient.updateConfirmedRequests(eventId, 1);
+            log.debug("Запрошено увеличение числа подтвержденных заявок для события {} на 1", eventId);
         }
 
         return mapperService.toDto(saved);
@@ -178,20 +178,29 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     }
 
     private Event getEventOrThrow(Long eventId) {
-        return eventRepository.findById(eventId)
-                .orElseThrow(() -> {
-                    log.warn("Событие с id={} не найдено", eventId);
-                    return new NotFoundException("Event with id=" + eventId + " was not found");
-                });
+        try {
+            EventDto dto = publicEventClient.getEvent(eventId).getBody();
+            if (dto == null) {
+                log.warn("Событие с id={} не найдено в event-service", eventId);
+                throw new NotFoundException("Event with id=" + eventId + " was not found");
+            }
+            // map EventDto to local Event entity (minimal fields used by validator)
+            Event event = Event.builder()
+                    .id(dto.getId())
+                    .confirmedRequests(dto.getConfirmedRequests() != null ? dto.getConfirmedRequests() : 0L)
+                    .initiator(dto.getInitiator() != null ? User.builder().id(dto.getInitiator().getId()).build() : null)
+                    .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0)
+                    .status(dto.getState() != null ? ru.practicum.web.event.entity.EventStatus.valueOf(dto.getState()) : null)
+                    .build();
+            return event;
+        } catch (Exception e) {
+            log.warn("Ошибка при запросе события {} у event-service: {}", eventId, e.getMessage());
+            throw new NotFoundException("Event with id=" + eventId + " was not found");
+        }
     }
 
     private Event getEventAndCheckOwnership(Long userId, Long eventId) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> {
-                    log.warn("Событие с id={} не найдено", eventId);
-                    return new NotFoundException("Event with id=" + eventId + " was not found");
-                });
-
+        Event event = getEventOrThrow(eventId);
         validator.validateAndCheckEventOwnership(event, userId);
         return event;
     }

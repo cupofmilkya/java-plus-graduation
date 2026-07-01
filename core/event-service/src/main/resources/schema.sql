@@ -1,12 +1,3 @@
-CREATE TABLE IF NOT EXISTS users
-(
-    id    BIGSERIAL PRIMARY KEY,
-    name  VARCHAR(250) NOT NULL,
-    email VARCHAR(254) NOT NULL UNIQUE
-);
-
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
 CREATE TABLE IF NOT EXISTS categories
 (
     id   BIGSERIAL PRIMARY KEY,
@@ -20,7 +11,8 @@ CREATE TABLE IF NOT EXISTS events
     annotation         VARCHAR(2000),
     description        VARCHAR(7000),
     event_date         TIMESTAMP,
-    initiator_id       BIGINT REFERENCES users (id),
+    -- initiator_id references users stored in user-service; keep as plain id (no FK)
+    initiator_id       BIGINT,
     category_id        BIGINT REFERENCES categories (id),
     lat                DOUBLE PRECISION,
     lon                DOUBLE PRECISION,
@@ -51,17 +43,3 @@ CREATE TABLE IF NOT EXISTS compilation_events
     event_id       BIGINT REFERENCES events (id) ON DELETE CASCADE,
     PRIMARY KEY (compilation_id, event_id)
 );
-
-CREATE TABLE IF NOT EXISTS requests
-(
-    id           BIGSERIAL PRIMARY KEY,
-    created      TIMESTAMP,
-    event_id     BIGINT REFERENCES events (id),
-    requester_id BIGINT REFERENCES users (id),
-    status       VARCHAR(20) CHECK (status IN ('PENDING', 'CONFIRMED', 'REJECTED', 'CANCELED')),
-    UNIQUE (event_id, requester_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_requests_event ON requests(event_id);
-CREATE INDEX IF NOT EXISTS idx_requests_requester ON requests(requester_id);
-CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);

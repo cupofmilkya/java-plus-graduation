@@ -42,6 +42,20 @@ public class AdminEventServiceImpl implements AdminEventService {
     private final DateUtils dateUtils;
 
     @Override
+    public void updateConfirmedRequests(Long eventId, int delta) {
+        log.info("Обновление количества подтвержденных заявок для события {} на delta={}", eventId, delta);
+        Event event = getEventOrThrow(eventId);
+        long updated = (event.getConfirmedRequests() != null ? event.getConfirmedRequests() : 0L) + delta;
+        if (updated < 0) {
+            log.warn("Попытка установить отрицательное количество подтвержденных заявок для события {}", eventId);
+            throw new IllegalArgumentException("Confirmed requests cannot be negative");
+        }
+        event.setConfirmedRequests(updated);
+        eventRepository.save(event);
+        log.debug("Количество подтвержденных заявок для события {} обновлено: {}", eventId, updated);
+    }
+
+    @Override
     public List<EventDto> getEvents(List<Long> users,
                                     List<String> states,
                                     List<Long> categories,

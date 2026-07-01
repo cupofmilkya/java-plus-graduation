@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.web.event.entity.Event;
-import ru.practicum.web.event.repository.EventRepository;
+import ru.practicum.feign.AdminEventsClient;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.web.request.dto.ParticipationRequestDto;
 import ru.practicum.web.request.entity.ParticipationRequest;
@@ -22,7 +22,7 @@ import java.util.List;
 public class RequestStatusUpdateService {
 
     private final ParticipationRequestRepository requestRepository;
-    private final EventRepository eventRepository;
+    private final AdminEventsClient adminEventsClient;
     private final RequestMapperService mapperService;
 
     @Transactional
@@ -51,9 +51,9 @@ public class RequestStatusUpdateService {
             requestRepository.save(request);
         }
 
-        event.setConfirmedRequests(event.getConfirmedRequests() + confirmedCount);
-        eventRepository.save(event);
-        log.debug("Количество подтвержденных заявок для события {} увеличено на {}",
+        // delegate event confirmed requests update to event-service via Feign
+        adminEventsClient.updateConfirmedRequests(event.getId(), confirmedCount);
+        log.debug("Запрошено обновление количества подтвержденных заявок для события {} на {}",
                 event.getId(), confirmedCount);
 
         return EventRequestStatusUpdateResult.builder()

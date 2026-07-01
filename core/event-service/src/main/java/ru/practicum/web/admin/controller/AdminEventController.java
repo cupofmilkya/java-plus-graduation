@@ -44,6 +44,15 @@ public class AdminEventController implements AdminEventsClient, EventClient {
         return ResponseEntity.ok(updated);
     }
 
+    @PatchMapping("/{eventId}/confirmed-requests")
+    public ResponseEntity<Void> updateConfirmedRequests(
+            @PathVariable Long eventId,
+            @RequestParam("delta") int delta
+    ) {
+        service.updateConfirmedRequests(eventId, delta);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/exists-by-category")
     public ResponseEntity<Boolean> existsByCategoryId(@RequestParam("categoryId") Long categoryId) {
         boolean exists = service.existsByCategoryId(categoryId);

@@ -32,4 +32,11 @@ public interface AdminEventsClient {
             @PathVariable("eventId") Long eventId,
             @Valid @RequestBody UpdateEventAdminRequest updateRequest
     );
+
+    @PatchMapping("/{eventId}/confirmed-requests")
+    ResponseEntity<Void> updateConfirmedRequests(
+            @PathVariable("eventId") Long eventId,
+            @RequestParam("delta") int delta
+    );
+
 }
