@@ -1,3 +1,5 @@
+CREATE DATABASE ewm_users;
+
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users
