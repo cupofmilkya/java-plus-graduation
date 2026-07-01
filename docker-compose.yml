@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - ewm-event-db-data:/var/lib/postgresql/data
       - ./core/event-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
@@ -26,7 +26,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - ewm-user-db-data:/var/lib/postgresql/data
       - ./core/user-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
@@ -45,7 +45,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5436:5432"
     volumes:
       - ewm-request-db-data:/var/lib/postgresql/data
       - ./core/request-service/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
@@ -61,10 +61,10 @@ services:
     container_name: ewm-stats-db
     environment:
       POSTGRES_DB: stats
-      POSTGRES_USER: stats
-      POSTGRES_PASSWORD: stats
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - stats-db-data:/var/lib/postgresql/data
       - ./stats/stats-server/src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
