@@ -1,3 +1,7 @@
+CREATE DATABASE ewm_events;
+CREATE USER postgres WITH PASSWORD 'postgres';
+GRANT ALL PRIVILEGES ON DATABASE ewm_events TO postgres;
+
 DROP TABLE IF EXISTS compilation_events;
 DROP TABLE IF EXISTS compilations;
 DROP TABLE IF EXISTS events;
