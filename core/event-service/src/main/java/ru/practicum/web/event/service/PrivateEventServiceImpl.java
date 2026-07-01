@@ -133,6 +133,14 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> {
                     log.warn("Событие с id={} для пользователя {} не найдено", eventId, userId);
+                    log.warn("Проверка: существует ли событие с id={} в БД?", eventId);
+                    eventRepository.findById(eventId).ifPresentOrElse(
+                        e -> log.warn("Событие id={} найдено, но initiatorId={} (ожидался {})", 
+                                      eventId, 
+                                      e.getInitiator() != null ? e.getInitiator().getId() : "null",
+                                      userId),
+                        () -> log.warn("Событие с id={} не найдено в БД", eventId)
+                    );
                     return new NotFoundException("Event with id=" + eventId + " was not found");
                 });
 
