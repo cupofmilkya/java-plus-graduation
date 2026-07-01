@@ -1,3 +1,8 @@
+DROP TABLE IF EXISTS compilation_events;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS compilations;
+DROP TABLE IF EXISTS categories;
+
 CREATE TABLE IF NOT EXISTS categories
 (
     id   BIGSERIAL PRIMARY KEY,
@@ -11,7 +16,6 @@ CREATE TABLE IF NOT EXISTS events
     annotation         VARCHAR(2000),
     description        VARCHAR(7000),
     event_date         TIMESTAMP,
-    -- initiator_id references users stored in user-service; keep as plain id (no FK)
     initiator_id       BIGINT,
     category_id        BIGINT REFERENCES categories (id),
     lat                DOUBLE PRECISION,

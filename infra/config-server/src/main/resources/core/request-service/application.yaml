@@ -2,9 +2,6 @@ server:
   port: 0
 
 spring:
-  application:
-    name: user-service
-
   datasource:
     url: jdbc:postgresql://localhost:5435/ewm_events
     username: postgres
