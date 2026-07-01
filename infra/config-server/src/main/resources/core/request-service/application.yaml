@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5436/ewm_requests
+    url: jdbc:postgresql://ewm-request-db:5432/ewm_requests
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
