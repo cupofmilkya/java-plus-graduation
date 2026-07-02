@@ -25,7 +25,6 @@ public class RequestStatusUpdateService {
     private final ParticipationRequestRepository requestRepository;
     private final AdminEventsClient adminEventsClient;
     private final RequestMapperService mapperService;
-    private final RestTemplate restTemplate;
 
     @Transactional
     public EventRequestStatusUpdateResult confirmRequests(
