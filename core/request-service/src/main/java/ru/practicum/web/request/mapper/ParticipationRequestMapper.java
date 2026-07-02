@@ -18,7 +18,8 @@ public class ParticipationRequestMapper {
                 .id(request.getId())
                 .event(request.getEvent().getId())
                 .requester(request.getRequester().getId())
-                .created(request.getCreated() != null ? request.getCreated().format(FORMATTER) : null)
+                .created(request.getCreated() != null ?
+                        request.getCreated().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) : null)
                 .status(request.getStatus() != null ? request.getStatus().name() : null)
                 .build();
     }
