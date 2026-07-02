@@ -1,11 +1,11 @@
 package ru.practicum.web.request.mapper;
 
 import ru.practicum.web.request.dto.RequestDto;
-import ru.practicum.web.request.entity.Request;
+import ru.practicum.web.request.entity.ParticipationRequest;
 
 public class RequestMapper {
 
-    public static RequestDto toDto(Request request) {
+    public static RequestDto toDto(ParticipationRequest request) {
         if (request == null) {
             return null;
         }

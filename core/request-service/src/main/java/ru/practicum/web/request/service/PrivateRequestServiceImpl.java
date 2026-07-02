@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.exception.BadRequestException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
 import ru.practicum.feign.EventClient;
@@ -61,6 +62,11 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     public ParticipationRequestDto addRequest(Long userId, Long eventId) {
         log.info("Создание заявки на участие в событии с id={} от пользователя с id={}", eventId, userId);
 
+        if (eventId == null || eventId <= 0) {
+            log.warn("Некорректный eventId: {}", eventId);
+            throw new BadRequestException("Event id is required and must be positive");
+        }
+
         if (!userServiceClient.userExists(userId)) {
             log.warn("Пользователь с id={} не найден", userId);
             throw new NotFoundException("User with id=" + userId + " was not found");
@@ -77,8 +83,12 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
         log.info("Заявка создана с id={}, статус: {}", saved.getId(), saved.getStatus());
 
         if (saved.getStatus() == RequestStatus.CONFIRMED) {
-            adminEventsClient.updateConfirmedRequests(eventId, 1);
-            log.debug("Запрошено увеличение числа подтвержденных заявок для события {} на 1", eventId);
+            try {
+                adminEventsClient.updateConfirmedRequests(eventId, 1);
+                log.debug("Запрошено увеличение числа подтвержденных заявок для события {} на 1", eventId);
+            } catch (Exception e) {
+                log.error("Ошибка при обновлении счетчика confirmedRequests: {}", e.getMessage());
+            }
         }
 
         return mapperService.toDto(saved);
