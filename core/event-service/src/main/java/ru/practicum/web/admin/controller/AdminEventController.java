@@ -58,4 +58,10 @@ public class AdminEventController implements AdminEventsClient, EventClient {
         boolean exists = service.existsByCategoryId(categoryId);
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping("/{eventId}")
+    public ResponseEntity<EventDto> findById(@PathVariable Long eventId) {
+        EventDto event = service.getEventById(eventId);
+        return ResponseEntity.ok(event);
+    }
 }

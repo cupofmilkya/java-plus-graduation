@@ -224,4 +224,16 @@ public class AdminEventServiceImpl implements AdminEventService {
         log.debug("Категория с id={} используется в событиях: {}", categoryId, exists);
         return exists;
     }
+
+    @Override
+    public EventDto getEventById(Long eventId) {
+        log.debug("Запрос события с id={}", eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+
+        Long views = statsService.getViews(event);
+        event.setViews(views);
+
+        return EventMapper.toDto(event);
+    }
 }

@@ -2,19 +2,18 @@ package ru.practicum.web.request.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import ru.practicum.exception.ConflictException;
 import ru.practicum.exception.NotFoundException;
+import ru.practicum.feign.EventClient;
 import ru.practicum.feign.UserServiceClient;
 import ru.practicum.dto.UserDto;
 import ru.practicum.web.event.entity.Event;
 import ru.practicum.dto.EventDto;
-import ru.practicum.feign.PublicEventClient;
 import ru.practicum.feign.AdminEventsClient;
+import ru.practicum.web.event.entity.EventStatus;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateResult;
 import ru.practicum.web.request.dto.ParticipationRequestDto;
@@ -37,9 +36,8 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
 
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
-    private final PublicEventClient publicEventClient;
+    private final EventClient eventClient;
     private final AdminEventsClient adminEventsClient;
-    private final DataSource dataSource;
     private final RequestValidator validator;
     private final RequestMapperService mapperService;
     private final RequestStatusUpdateService statusUpdateService;
@@ -59,17 +57,18 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     }
 
     @Override
+    @Transactional
     public ParticipationRequestDto addRequest(Long userId, Long eventId) {
         log.info("Создание заявки на участие в событии с id={} от пользователя с id={}", eventId, userId);
 
-        User user = getUserOrThrow(userId);
-        try (Connection conn = dataSource.getConnection()) {
-            String url = conn.getMetaData().getURL();
-            log.debug("DataSource URL for request-service: {}", url);
-        } catch (SQLException e) {
-            log.warn("Unable to determine DataSource URL: {}", e.getMessage());
+        if (!userServiceClient.userExists(userId)) {
+            log.warn("Пользователь с id={} не найден", userId);
+            throw new NotFoundException("User with id=" + userId + " was not found");
         }
+
         Event event = getEventOrThrow(eventId);
+
+        User user = getUserOrThrow(userId);
 
         validator.validateAddRequest(user, event, userId, eventId);
 
@@ -78,7 +77,6 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
         log.info("Заявка создана с id={}, статус: {}", saved.getId(), saved.getStatus());
 
         if (saved.getStatus() == RequestStatus.CONFIRMED) {
-            // notify event-service to increment confirmed requests
             adminEventsClient.updateConfirmedRequests(eventId, 1);
             log.debug("Запрошено увеличение числа подтвержденных заявок для события {} на 1", eventId);
         }
@@ -179,22 +177,32 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
 
     private Event getEventOrThrow(Long eventId) {
         try {
-            EventDto dto = publicEventClient.getEvent(eventId).getBody();
+            ResponseEntity<EventDto> response = eventClient.findById(eventId);
+            EventDto dto = response.getBody();
+
             if (dto == null) {
                 log.warn("Событие с id={} не найдено в event-service", eventId);
                 throw new NotFoundException("Event with id=" + eventId + " was not found");
             }
-            // map EventDto to local Event entity (minimal fields used by validator)
+
             Event event = Event.builder()
                     .id(dto.getId())
                     .confirmedRequests(dto.getConfirmedRequests() != null ? dto.getConfirmedRequests() : 0L)
-                    .initiator(dto.getInitiator() != null ? User.builder().id(dto.getInitiator().getId()).build() : null)
                     .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0)
-                    .status(dto.getState() != null ? ru.practicum.web.event.entity.EventStatus.valueOf(dto.getState()) : null)
+                    .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : true)
+                    .status(dto.getState() != null ? EventStatus.valueOf(dto.getState()) : null)
                     .build();
+
+            if (dto.getInitiator() != null) {
+                event.setInitiator(User.builder()
+                        .id(dto.getInitiator().getId())
+                        .name(dto.getInitiator().getName())
+                        .build());
+            }
+
             return event;
         } catch (Exception e) {
-            log.warn("Ошибка при запросе события {} у event-service: {}", eventId, e.getMessage());
+            log.error("Ошибка при запросе события {} у event-service: {}", eventId, e.getMessage());
             throw new NotFoundException("Event with id=" + eventId + " was not found");
         }
     }

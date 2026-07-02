@@ -22,4 +22,6 @@ public interface AdminEventService {
     void updateConfirmedRequests(Long eventId, int delta);
 
     boolean existsByCategoryId(Long categoryId);
+
+    EventDto getEventById(Long eventId);
 }
