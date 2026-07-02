@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import ru.practicum.web.event.entity.Event;
 import ru.practicum.feign.AdminEventsClient;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateResult;

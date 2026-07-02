@@ -38,5 +38,4 @@ public interface AdminEventsClient {
             @PathVariable("eventId") Long eventId,
             @RequestParam("delta") int delta
     );
-
 }
