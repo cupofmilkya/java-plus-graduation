@@ -195,10 +195,17 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
                 throw new NotFoundException("Event with id=" + eventId + " was not found");
             }
 
+            Integer participantLimit = dto.getParticipantLimit();
+            if (participantLimit == null) {
+                participantLimit = 0;
+            }
+            log.info("Событие {}: participantLimit={}, requestModeration={}",
+                    eventId, participantLimit, dto.getRequestModeration());
+
             Event event = Event.builder()
                     .id(dto.getId())
                     .confirmedRequests(dto.getConfirmedRequests() != null ? dto.getConfirmedRequests() : 0L)
-                    .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : 0)
+                    .participantLimit(participantLimit)
                     .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : true)
                     .status(dto.getState() != null ? EventStatus.valueOf(dto.getState()) : null)
                     .build();
