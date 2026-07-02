@@ -27,13 +27,13 @@ public interface AdminEventsClient {
             @RequestParam(defaultValue = "10") int size
     );
 
-    @PatchMapping("/{eventId}")
+    @RequestMapping(method = RequestMethod.PATCH, value = "/{eventId}")
     ResponseEntity<EventDto> updateEvent(
             @PathVariable("eventId") Long eventId,
             @Valid @RequestBody UpdateEventAdminRequest updateRequest
     );
 
-    @PatchMapping("/{eventId}/confirmed-requests")
+    @RequestMapping(method = RequestMethod.PATCH, value = "/{eventId}/confirmed-requests")
     ResponseEntity<Void> updateConfirmedRequests(
             @PathVariable("eventId") Long eventId,
             @RequestParam("delta") int delta
