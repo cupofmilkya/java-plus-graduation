@@ -1,7 +1,3 @@
-CREATE DATABASE stats;
-CREATE USER postgres WITH PASSWORD 'postgres';
-GRANT ALL PRIVILEGES ON DATABASE stats TO postgres;
-
 DROP TABLE IF EXISTS endpoint_hits;
 
 CREATE TABLE endpoint_hits (

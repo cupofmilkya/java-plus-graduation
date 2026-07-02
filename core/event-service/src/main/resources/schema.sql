@@ -1,19 +1,10 @@
-CREATE DATABASE ewm_events;
-CREATE USER postgres WITH PASSWORD 'postgres';
-GRANT ALL PRIVILEGES ON DATABASE ewm_events TO postgres;
-
-DROP TABLE IF EXISTS compilation_events;
-DROP TABLE IF EXISTS compilations;
-DROP TABLE IF EXISTS events;
-DROP TABLE IF EXISTS categories;
-
-CREATE TABLE categories
+CREATE TABLE IF NOT EXISTS categories
 (
     id   BIGSERIAL PRIMARY KEY,
     name VARCHAR(50) NOT NULL UNIQUE
 );
 
-CREATE TABLE events
+CREATE TABLE IF NOT EXISTS events
 (
     id                 BIGSERIAL PRIMARY KEY,
     title              VARCHAR(120),
@@ -33,19 +24,19 @@ CREATE TABLE events
     confirmed_requests BIGINT DEFAULT 0
 );
 
-CREATE INDEX idx_events_initiator ON events(initiator_id);
-CREATE INDEX idx_events_category ON events(category_id);
-CREATE INDEX idx_events_status ON events(status);
-CREATE INDEX idx_events_event_date ON events(event_date);
+CREATE INDEX IF NOT EXISTS idx_events_initiator ON events(initiator_id);
+CREATE INDEX IF NOT EXISTS idx_events_category ON events(category_id);
+CREATE INDEX IF NOT EXISTS idx_events_status ON events(status);
+CREATE INDEX IF NOT EXISTS idx_events_event_date ON events(event_date);
 
-CREATE TABLE compilations
+CREATE TABLE IF NOT EXISTS compilations
 (
     id     BIGSERIAL PRIMARY KEY,
     title  VARCHAR(50) NOT NULL UNIQUE,
     pinned BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE compilation_events
+CREATE TABLE IF NOT EXISTS compilation_events
 (
     compilation_id BIGINT REFERENCES compilations (id) ON DELETE CASCADE,
     event_id       BIGINT REFERENCES events (id) ON DELETE CASCADE,
