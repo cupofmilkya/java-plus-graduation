@@ -192,6 +192,10 @@ logging:
     org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
     org.springframework.cloud.client.loadbalancer: DEBUG
     com.netflix.discovery: DEBUG
+    root: DEBUG
+    org.springframework.boot: DEBUG
+    org.springframework.context: DEBUG
+
 
 management:
   endpoints:
