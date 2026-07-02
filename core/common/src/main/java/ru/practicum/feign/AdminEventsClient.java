@@ -33,7 +33,7 @@ public interface AdminEventsClient {
             @Valid @RequestBody UpdateEventAdminRequest updateRequest
     );
 
-    @RequestMapping(method = RequestMethod.PATCH, value = "/{eventId}/confirmed-requests")
+    @PostMapping("/{eventId}/confirmed-requests")
     ResponseEntity<Void> updateConfirmedRequests(
             @PathVariable("eventId") Long eventId,
             @RequestParam("delta") int delta

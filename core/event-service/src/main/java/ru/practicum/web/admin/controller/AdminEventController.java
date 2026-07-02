@@ -44,7 +44,7 @@ public class AdminEventController implements AdminEventsClient, EventClient {
         return ResponseEntity.ok(updated);
     }
 
-    @PatchMapping("/{eventId}/confirmed-requests")
+    @PostMapping("/{eventId}/confirmed-requests")
     public ResponseEntity<Void> updateConfirmedRequests(
             @PathVariable Long eventId,
             @RequestParam("delta") int delta
