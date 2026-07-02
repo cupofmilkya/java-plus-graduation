@@ -38,7 +38,10 @@ public class RequestMapperService {
     }
 
     private RequestStatus determineInitialStatus(Event event) {
-        if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
+        if (event.getParticipantLimit() == 0) {
+            return RequestStatus.CONFIRMED;
+        }
+        if (event.getRequestModeration() != null && !event.getRequestModeration()) {
             return RequestStatus.CONFIRMED;
         }
         return RequestStatus.PENDING;

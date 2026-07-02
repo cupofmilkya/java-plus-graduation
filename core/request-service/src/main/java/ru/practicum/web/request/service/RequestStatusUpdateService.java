@@ -51,10 +51,13 @@ public class RequestStatusUpdateService {
             requestRepository.save(request);
         }
 
-        // delegate event confirmed requests update to event-service via Feign
-        adminEventsClient.updateConfirmedRequests(event.getId(), confirmedCount);
-        log.debug("Запрошено обновление количества подтвержденных заявок для события {} на {}",
-                event.getId(), confirmedCount);
+        try {
+            adminEventsClient.updateConfirmedRequests(event.getId(), confirmedCount);
+            log.debug("Запрошено обновление количества подтвержденных заявок для события {} на {}",
+                    event.getId(), confirmedCount);
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении confirmedRequests в event-service: {}", e.getMessage());
+        }
 
         return EventRequestStatusUpdateResult.builder()
                 .confirmedRequests(confirmedList)

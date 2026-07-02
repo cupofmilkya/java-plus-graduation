@@ -37,12 +37,14 @@ public class RequestValidator {
             throw new ConflictException("Request already exists");
         }
 
-        int confirmedRequests = requestRepository.countByEventIdAndStatus(
-                eventId, RequestStatus.CONFIRMED);
-        if (event.getParticipantLimit() > 0 && confirmedRequests >= event.getParticipantLimit()) {
-            log.warn("Достигнут лимит участников для события {}. Текущее количество: {}",
-                    eventId, confirmedRequests);
-            throw new ConflictException("Participant limit reached");
+        if (event.getParticipantLimit() > 0) {
+            int confirmedRequests = requestRepository.countByEventIdAndStatus(
+                    eventId, RequestStatus.CONFIRMED);
+            if (confirmedRequests >= event.getParticipantLimit()) {
+                log.warn("Достигнут лимит участников для события {}. Текущее количество: {}",
+                        eventId, confirmedRequests);
+                throw new ConflictException("Participant limit reached");
+            }
         }
 
         log.debug("Валидация запроса на участие успешно пройдена");
@@ -60,6 +62,11 @@ public class RequestValidator {
         if (!request.getRequester().getId().equals(userId)) {
             log.warn("Пользователь {} попытался отменить чужую заявку {}", userId, requestId);
             throw new NotFoundException("Request not found");
+        }
+
+        if (request.getStatus() == RequestStatus.CONFIRMED) {
+            log.warn("Попытка отменить уже принятую заявку {}", requestId);
+            throw new ConflictException("Cannot cancel confirmed request");
         }
 
         log.debug("Валидация отмены заявки успешно пройдена");
@@ -122,14 +129,17 @@ public class RequestValidator {
                 event.getId(), RequestStatus.CONFIRMED);
         int participantLimit = event.getParticipantLimit();
 
-        // participantLimit == 0 means unlimited
-        if (participantLimit > 0 && confirmedRequests >= participantLimit) {
+        if (participantLimit == 0) {
+            return Integer.MAX_VALUE;
+        }
+
+        if (confirmedRequests >= participantLimit) {
             log.warn("Достигнут лимит участников для события {}. Текущее количество: {}",
                     event.getId(), confirmedRequests);
             throw new ConflictException("The participant limit has been reached");
         }
 
-        int availableSlots = participantLimit == 0 ? Integer.MAX_VALUE : participantLimit - confirmedRequests;
+        int availableSlots = participantLimit - confirmedRequests;
         log.debug("Доступно мест для события {}: {}", event.getId(), availableSlots);
         return availableSlots;
     }
