@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import ru.practicum.web.event.entity.Event;
 import ru.practicum.feign.AdminEventsClient;
 import ru.practicum.web.request.dto.EventRequestStatusUpdateResult;
@@ -24,6 +25,7 @@ public class RequestStatusUpdateService {
     private final ParticipationRequestRepository requestRepository;
     private final AdminEventsClient adminEventsClient;
     private final RequestMapperService mapperService;
+    private final RestTemplate restTemplate;
 
     @Transactional
     public EventRequestStatusUpdateResult confirmRequests(
@@ -51,12 +53,13 @@ public class RequestStatusUpdateService {
             requestRepository.save(request);
         }
 
+        log.info("=== ВЫЗОВ updateConfirmedRequests для события {}, delta={} ===", event.getId(), confirmedCount);
+
         try {
             adminEventsClient.updateConfirmedRequests(event.getId(), confirmedCount);
-            log.debug("Запрошено обновление количества подтвержденных заявок для события {} на {}",
-                    event.getId(), confirmedCount);
+            log.info("updateConfirmedRequests УСПЕШНО вызван для события {}", event.getId());
         } catch (Exception e) {
-            log.error("Ошибка при обновлении confirmedRequests в event-service: {}", e.getMessage());
+            log.error("Ошибка при вызове updateConfirmedRequests: {}", e.getMessage());
         }
 
         return EventRequestStatusUpdateResult.builder()
