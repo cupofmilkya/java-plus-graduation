@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/ewm_requests
     username: postgres
-    password: postgres
+    password: password
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
