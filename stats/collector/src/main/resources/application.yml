@@ -16,7 +16,8 @@ spring:
 
 grpc:
   server:
-    port: 0
+    port: 61405
+    enable: true
 
 eureka:
   client:

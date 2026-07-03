@@ -25,12 +25,12 @@ spring:
 grpc:
   client:
     collector:
-      address: 'discovery:///collector'
+      address: 'static://localhost:61405'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext
     analyzer:
-      address: 'discovery:///analyzer'
+      address: 'static://localhost:61479'
       enableKeepAlive: true
       keepAliveWithoutCalls: true
       negotiationType: plaintext

@@ -2,6 +2,7 @@ package ru.practicum.web.request.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,8 @@ public class PrivateRequestServiceImpl implements PrivateRequestService {
     private final RequestMapperService mapperService;
     private final RequestStatusUpdateService statusUpdateService;
     private final UserServiceClient userServiceClient;
-    private final UserActionControllerGrpc.UserActionControllerBlockingStub collectorStub;
+    @GrpcClient("collector")
+    private UserActionControllerGrpc.UserActionControllerBlockingStub collectorStub;
 
     @Override
     public List<ParticipationRequestDto> getUserRequests(Long userId) {

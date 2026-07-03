@@ -1,5 +1,6 @@
 package ru.practicum;
 
+import net.devh.boot.grpc.client.autoconfigure.GrpcClientAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -9,7 +10,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import ru.practicum.statsclient.config.GrpcClientConfig;
 import ru.practicum.validation.CategoryValidator;
 
 @SpringBootApplication
@@ -27,6 +27,7 @@ import ru.practicum.validation.CategoryValidator;
 )
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "ru.practicum.feign")
+@Import(GrpcClientAutoConfiguration.class)
 @EntityScan(basePackages = {
         "ru.practicum.web.category.entity",
         "ru.practicum.web.event.entity",
@@ -39,7 +40,6 @@ import ru.practicum.validation.CategoryValidator;
         "ru.practicum.web.admin.repository",
         "ru.practicum.web.user.repository"
 })
-@Import(GrpcClientConfig.class)
 public class EventServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(EventServiceApplication.class, args);

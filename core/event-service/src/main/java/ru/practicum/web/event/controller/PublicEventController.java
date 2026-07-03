@@ -2,6 +2,7 @@ package ru.practicum.web.event.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.EventDto;
@@ -30,8 +31,11 @@ import java.util.List;
 public class PublicEventController {
 
     private final PublicEventService publicEventService;
-    private final UserActionControllerGrpc.UserActionControllerBlockingStub collectorStub;
-    private final RecommendationsControllerGrpc.RecommendationsControllerBlockingStub analyzerStub;
+    @GrpcClient("collector")
+    private UserActionControllerGrpc.UserActionControllerBlockingStub collectorStub;
+
+    @GrpcClient("analyzer")
+    private RecommendationsControllerGrpc.RecommendationsControllerBlockingStub analyzerStub;
     private final RequestServiceClient requestServiceClient;
 
     @GetMapping
