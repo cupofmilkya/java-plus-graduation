@@ -44,11 +44,6 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-avro-serializer</artifactId>
-            <version>7.3.2</version>
-        </dependency>
-        <dependency>
             <groupId>ru.practicum</groupId>
             <artifactId>stats-avro</artifactId>
             <version>${project.version}</version>

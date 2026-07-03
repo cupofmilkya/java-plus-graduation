@@ -19,8 +19,7 @@ public class SimilarityConsumerService {
 
     private final EventSimilarityRepository similarityRepository;
 
-    @KafkaListener(topics = "stats.events-similarity.v1", groupId = "analyzer-group",
-            properties = {"spring.json.value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer"})
+    @KafkaListener(topics = "stats.events-similarity.v1", groupId = "analyzer-group")
     @Transactional
     public void consume(EventSimilarityAvro avro) {
         log.info("Received similarity: eventA={}, eventB={}, score={}, timestamp={}",

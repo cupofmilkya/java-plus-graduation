@@ -20,8 +20,7 @@ public class UserActionConsumerService {
 
     private final UserActionRepository userActionRepository;
 
-    @KafkaListener(topics = "stats.user-actions.v1", groupId = "analyzer-group",
-            properties = {"spring.json.value.deserializer=io.confluent.kafka.serializers.KafkaAvroDeserializer"})
+    @KafkaListener(topics = "stats.user-actions.v1", groupId = "analyzer-group")
     @Transactional
     public void consume(UserActionAvro action) {
         log.info("Received user action: userId={}, eventId={}, action={}, timestamp={}",

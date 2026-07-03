@@ -131,12 +131,6 @@
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-avro-serializer</artifactId>
-            <version>7.3.2</version>
-        </dependency>
-
         <!-- Internal modules -->
         <dependency>
             <groupId>ru.practicum</groupId>
