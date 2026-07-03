@@ -102,7 +102,7 @@ public class RecommendationService {
         Map<Long, Double> resultMap = new HashMap<>();
         for (Long eventId : eventIds) {
             List<Object[]> maxWeights = userActionRepository.findMaxWeightsByUserId(eventId);
-            Double sum = userActionRepository.findAll().stream()
+            double sum = userActionRepository.findAll().stream()
                     .filter(ua -> ua.getEventId().equals(eventId))
                     .collect(Collectors.groupingBy(UserAction::getUserId,
                             Collectors.summingInt(UserAction::getWeight)))

@@ -10,13 +10,13 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
-        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
   config:
     import: optional:configserver:http://localhost:8888
 
 grpc:
   server:
-    port: 61405
+    port: 59091
     enable: true
 
 eureka:

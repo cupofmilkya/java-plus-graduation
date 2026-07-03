@@ -28,7 +28,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       properties:
-        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8081}
+        schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
         specific.avro.reader: true
     listener:
       ack-mode: manual
@@ -38,6 +38,7 @@ spring:
 grpc:
   server:
     port: 61479
+    enable: true
 
 eureka:
   client:
@@ -52,3 +53,5 @@ logging:
     ru.practicum: DEBUG
     org.springframework.kafka: INFO
     org.hibernate.SQL: DEBUG
+    net.devh.boot.grpc: DEBUG
+    io.grpc: DEBUG
