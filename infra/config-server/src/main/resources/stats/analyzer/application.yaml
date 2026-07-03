@@ -26,7 +26,7 @@ spring:
     consumer:
       group-id: analyzer-group
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.VoidDeserializer
       value-deserializer: ru.practicum.analyzer.serialization.UserActionAvroDeserializer
     listener:
       ack-mode: manual

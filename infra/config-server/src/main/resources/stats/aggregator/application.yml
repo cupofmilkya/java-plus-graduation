@@ -9,12 +9,12 @@ spring:
     consumer:
       group-id: aggregator-group
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.VoidDeserializer
       value-deserializer: ru.practicum.aggregator.serialization.UserActionAvroDeserializer
       properties:
         specific.avro.reader: true
     producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      key-serializer: org.apache.kafka.common.serialization.VoidSerializer
       value-serializer: ru.practicum.aggregator.serialization.EventSimilarityAvroSerializer
     listener:
       ack-mode: manual

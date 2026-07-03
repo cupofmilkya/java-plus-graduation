@@ -26,13 +26,13 @@ public class KafkaProducerService {
                 .setUserId(proto.getUserId())
                 .setEventId(proto.getEventId())
                 .setActionType(convertActionType(proto.getActionType()))
-                .setTimestamp(timestampMillis)  // Теперь передаем long
+                .setTimestamp(timestampMillis)
                 .build();
 
         log.info("Sending user action to Kafka: userId={}, eventId={}, action={}, timestamp={}",
                 avro.getUserId(), avro.getEventId(), avro.getActionType(), avro.getTimestamp());
 
-        kafkaTemplate.send(TOPIC, String.valueOf(proto.getUserId()), avro);
+        kafkaTemplate.send(TOPIC, null, avro);
     }
 
     private ActionTypeAvro convertActionType(ActionTypeProto proto) {
