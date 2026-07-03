@@ -4,18 +4,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.Import;
+import ru.practicum.statsclient.config.GrpcClientConfig;
 
-@SpringBootApplication(scanBasePackages = {
-        "ru.practicum.web.request",
-        "ru.practicum.web.event",
-        "ru.practicum.web.user",
-        "ru.practicum.category.entity",
-        "ru.practicum.feign",
-        "ru.practicum.exception",
-        "ru.practicum.dto"
-})
+@SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "ru.practicum.feign")
+@EnableFeignClients
+@Import(GrpcClientConfig.class)
 public class RequestServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(RequestServiceApplication.class, args);

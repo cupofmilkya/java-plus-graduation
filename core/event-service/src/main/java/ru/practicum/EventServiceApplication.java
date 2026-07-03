@@ -7,7 +7,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import ru.practicum.statsclient.config.GrpcClientConfig;
 import ru.practicum.validation.CategoryValidator;
 
 @SpringBootApplication
@@ -37,6 +39,7 @@ import ru.practicum.validation.CategoryValidator;
         "ru.practicum.web.admin.repository",
         "ru.practicum.web.user.repository"
 })
+@Import(GrpcClientConfig.class)
 public class EventServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(EventServiceApplication.class, args);
