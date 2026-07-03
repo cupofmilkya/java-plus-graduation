@@ -20,20 +20,16 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: analyzer-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
-      properties:
-        schema.registry.url: http://localhost:8081
-        specific.avro.reader: true
+      value-deserializer: ru.practicum.analyzer.serialization.EventSimilarityAvroDeserializer
     listener:
       ack-mode: manual
-  config:
-    import: optional:configserver:http://localhost:8888
 
 grpc:
   server:
@@ -53,5 +49,3 @@ logging:
     ru.practicum: DEBUG
     org.springframework.kafka: INFO
     org.hibernate.SQL: DEBUG
-    net.devh.boot.grpc: DEBUG
-    io.grpc: DEBUG

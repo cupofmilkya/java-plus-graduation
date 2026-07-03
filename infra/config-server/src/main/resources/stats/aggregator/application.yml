@@ -10,15 +10,12 @@ spring:
       group-id: aggregator-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+      value-deserializer: ru.practicum.aggregator.serialization.UserActionAvroDeserializer
       properties:
-        schema.registry.url: http://localhost:8081
         specific.avro.reader: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
-      properties:
-        schema.registry.url: http://localhost:8081
+      value-serializer: ru.practicum.aggregator.serialization.EventSimilarityAvroSerializer
     listener:
       ack-mode: manual
 
