@@ -26,12 +26,14 @@ public class UserActionConsumerService {
         log.info("Received user action: userId={}, eventId={}, action={}, timestamp={}",
                 action.getUserId(), action.getEventId(), action.getActionType(), action.getTimestamp());
 
+        long timestampMillis = action.getTimestamp();
+
         UserAction entity = UserAction.builder()
                 .userId(action.getUserId())
                 .eventId(action.getEventId())
                 .actionType(action.getActionType().toString())
                 .weight(getWeight(action.getActionType()))
-                .timestamp(Instant.ofEpochMilli(action.getTimestamp().toEpochMilli()).atZone(ZoneOffset.UTC).toLocalDateTime())
+                .timestamp(Instant.ofEpochMilli(timestampMillis).atZone(ZoneOffset.UTC).toLocalDateTime())
                 .build();
 
         userActionRepository.save(entity);

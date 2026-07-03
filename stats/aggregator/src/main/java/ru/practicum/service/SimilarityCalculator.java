@@ -85,8 +85,8 @@ public class SimilarityCalculator {
         EventSimilarityAvro avro = EventSimilarityAvro.newBuilder()
                 .setEventA(first)
                 .setEventB(second)
-                .setScore(similarity)
-                .setTimestamp(Instant.now())   // <-- исправлено: передаём Instant
+                .setScore((float) similarity)
+                .setTimestamp(Instant.now())
                 .build();
 
         kafkaTemplate.send(SIMILARITY_TOPIC, String.valueOf(first), avro);

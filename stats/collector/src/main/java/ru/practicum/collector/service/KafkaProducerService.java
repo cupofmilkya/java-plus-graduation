@@ -9,8 +9,6 @@ import ru.practicum.ewm.stats.avro.UserActionAvro;
 import ru.practicum.stats.service.collector.ActionTypeProto;
 import ru.practicum.stats.service.collector.UserActionProto;
 
-import java.time.Instant;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -21,15 +19,18 @@ public class KafkaProducerService {
     private final KafkaTemplate<String, UserActionAvro> kafkaTemplate;
 
     public void sendAction(UserActionProto proto) {
+        long timestampMillis = proto.getTimestamp().getSeconds() * 1000 +
+                proto.getTimestamp().getNanos() / 1_000_000;
+
         UserActionAvro avro = UserActionAvro.newBuilder()
                 .setUserId(proto.getUserId())
                 .setEventId(proto.getEventId())
                 .setActionType(convertActionType(proto.getActionType()))
-                .setTimestamp(Instant.ofEpochSecond(proto.getTimestamp().getSeconds() * 1000 + proto.getTimestamp().getNanos() / 1_000_000))
+                .setTimestamp(timestampMillis)  // Теперь передаем long
                 .build();
 
-        log.info("Sending user action to Kafka: userId={}, eventId={}, action={}",
-                avro.getUserId(), avro.getEventId(), avro.getActionType());
+        log.info("Sending user action to Kafka: userId={}, eventId={}, action={}, timestamp={}",
+                avro.getUserId(), avro.getEventId(), avro.getActionType(), avro.getTimestamp());
 
         kafkaTemplate.send(TOPIC, String.valueOf(proto.getUserId()), avro);
     }

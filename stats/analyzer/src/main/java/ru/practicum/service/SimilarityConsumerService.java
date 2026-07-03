@@ -9,7 +9,6 @@ import ru.practicum.model.EventSimilarity;
 import ru.practicum.repository.EventSimilarityRepository;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 
-import java.time.Instant;
 import java.time.ZoneOffset;
 
 @Slf4j
@@ -28,14 +27,14 @@ public class SimilarityConsumerService {
         EventSimilarity entity = EventSimilarity.builder()
                 .eventA(avro.getEventA())
                 .eventB(avro.getEventB())
-                .score(avro.getScore())
-                .timestamp(Instant.ofEpochMilli(avro.getTimestamp().toEpochMilli()).atZone(ZoneOffset.UTC).toLocalDateTime())
+                .score((double) avro.getScore())
+                .timestamp(avro.getTimestamp().atZone(ZoneOffset.UTC).toLocalDateTime())
                 .build();
 
         similarityRepository.findByEventAAndEventB(avro.getEventA(), avro.getEventB())
                 .ifPresentOrElse(
                         existing -> {
-                            existing.setScore(avro.getScore());
+                            existing.setScore((double) avro.getScore());
                             existing.setTimestamp(entity.getTimestamp());
                             similarityRepository.save(existing);
                         },
