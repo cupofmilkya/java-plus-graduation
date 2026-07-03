@@ -15,4 +15,7 @@ public interface UserActionRepository extends JpaRepository<UserAction, Long> {
     List<UserAction> findByUserIdOrderByTimestampDesc(Long userId);
 
     boolean existsByUserIdAndEventId(Long userId, Long eventId);
+
+    @Query("SELECT ua.userId, MAX(ua.weight) FROM UserAction ua WHERE ua.eventId = :eventId GROUP BY ua.userId")
+    List<Object[]> findMaxWeightsByEventId(@Param("eventId") Long eventId);
 }

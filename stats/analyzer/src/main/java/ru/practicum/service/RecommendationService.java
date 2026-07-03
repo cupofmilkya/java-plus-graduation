@@ -25,19 +25,20 @@ public class RecommendationService {
     public List<RecommendedEventProto> getRecommendationsForUser(long userId, int maxResults) {
         log.info("Getting recommendations for user {} (max {})", userId, maxResults);
 
-        List<UserAction> recentActions = userActionRepository.findByUserIdOrderByTimestampDesc(userId);
-        if (recentActions.isEmpty()) {
+        List<UserAction> allUserActions = userActionRepository.findByUserIdOrderByTimestampDesc(userId);
+        if (allUserActions.isEmpty()) {
             log.info("User {} has no actions, returning empty", userId);
             return Collections.emptyList();
         }
 
-        Set<Long> recentEventIds = recentActions.stream()
+        Set<Long> recentEventIds = allUserActions.stream()
                 .map(UserAction::getEventId)
                 .limit(DEFAULT_K)
                 .collect(Collectors.toSet());
 
-        Set<Long> interactedEvents = userActionRepository.findByUserIdOrderByTimestampDesc(userId)
-                .stream().map(UserAction::getEventId).collect(Collectors.toSet());
+        Set<Long> interactedEvents = allUserActions.stream()
+                .map(UserAction::getEventId)
+                .collect(Collectors.toSet());
 
         Map<Long, Double> candidateScores = new HashMap<>();
 
@@ -45,12 +46,13 @@ public class RecommendationService {
             List<EventSimilarity> similarities = similarityRepository.findSimilaritiesByEventId(eventId);
             for (EventSimilarity sim : similarities) {
                 Long otherEvent = sim.getEventA().equals(eventId) ? sim.getEventB() : sim.getEventA();
-                if (interactedEvents.contains(otherEvent)) continue;
-                candidateScores.merge(otherEvent, sim.getScore(), Double::sum);
+                if (!interactedEvents.contains(otherEvent)) {
+                    candidateScores.merge(otherEvent, sim.getScore(), Double::sum);
+                }
             }
         }
 
-        List<RecommendedEventProto> result = candidateScores.entrySet().stream()
+        return candidateScores.entrySet().stream()
                 .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
                 .limit(maxResults)
                 .map(e -> RecommendedEventProto.newBuilder()
@@ -58,9 +60,6 @@ public class RecommendationService {
                         .setScore(e.getValue())
                         .build())
                 .collect(Collectors.toList());
-
-        log.info("Returning {} recommendations for user {}", result.size(), userId);
-        return result;
     }
 
     public List<RecommendedEventProto> getSimilarEvents(long eventId, long userId, int maxResults) {
@@ -72,9 +71,11 @@ public class RecommendationService {
         }
 
         Set<Long> interacted = userActionRepository.findByUserIdOrderByTimestampDesc(userId)
-                .stream().map(UserAction::getEventId).collect(Collectors.toSet());
+                .stream()
+                .map(UserAction::getEventId)
+                .collect(Collectors.toSet());
 
-        List<RecommendedEventProto> result = similarities.stream()
+        return similarities.stream()
                 .map(sim -> {
                     Long other = sim.getEventA().equals(eventId) ? sim.getEventB() : sim.getEventA();
                     return Map.entry(other, sim.getScore());
@@ -87,9 +88,6 @@ public class RecommendationService {
                         .setScore(e.getValue())
                         .build())
                 .collect(Collectors.toList());
-
-        log.info("Returning {} similar events", result.size());
-        return result;
     }
 
     public List<RecommendedEventProto> getInteractionsCount(List<Long> eventIds) {
@@ -99,24 +97,24 @@ public class RecommendationService {
             return Collections.emptyList();
         }
 
-        Map<Long, Double> resultMap = new HashMap<>();
+        List<RecommendedEventProto> result = new ArrayList<>();
+
         for (Long eventId : eventIds) {
-            List<Object[]> maxWeights = userActionRepository.findMaxWeightsByUserId(eventId);
-            double sum = userActionRepository.findAll().stream()
-                    .filter(ua -> ua.getEventId().equals(eventId))
-                    .collect(Collectors.groupingBy(UserAction::getUserId,
-                            Collectors.summingInt(UserAction::getWeight)))
-                    .values().stream().mapToDouble(Integer::doubleValue).sum();
-            resultMap.put(eventId, sum);
+            List<Object[]> maxWeightsByUser = userActionRepository.findMaxWeightsByEventId(eventId);
+
+            double totalScore = 0.0;
+            for (Object[] row : maxWeightsByUser) {
+                Integer maxWeight = (Integer) row[1];
+                totalScore += maxWeight != null ? maxWeight : 0;
+            }
+
+            result.add(RecommendedEventProto.newBuilder()
+                    .setEventId(eventId)
+                    .setScore(totalScore)
+                    .build());
         }
 
-        List<RecommendedEventProto> result = resultMap.entrySet().stream()
-                .map(e -> RecommendedEventProto.newBuilder()
-                        .setEventId(e.getKey())
-                        .setScore(e.getValue())
-                        .build())
-                .collect(Collectors.toList());
-
+        log.info("Returning interactions count for {} events", result.size());
         return result;
     }
 }
