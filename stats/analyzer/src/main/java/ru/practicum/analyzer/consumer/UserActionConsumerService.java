@@ -25,7 +25,6 @@ public class UserActionConsumerService {
 
     @KafkaListener(
             topics = "stats.user-actions.v1",
-            groupId = "aggregator-group",
             containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional

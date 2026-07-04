@@ -32,7 +32,14 @@ public class KafkaProducerService {
         log.info("Sending user action to Kafka: userId={}, eventId={}, action={}, timestamp={}",
                 avro.getUserId(), avro.getEventId(), avro.getActionType(), avro.getTimestamp());
 
-        kafkaTemplate.send(TOPIC, null, avro);  // key = null
+        kafkaTemplate.send(TOPIC, null, avro)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Kafka send failed", ex);
+                    } else {
+                        log.info("Kafka send OK");
+                    }
+                });
     }
 
     private ActionTypeAvro convertActionType(ActionTypeProto proto) {
