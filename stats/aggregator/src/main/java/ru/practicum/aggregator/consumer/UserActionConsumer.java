@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import ru.practicum.ewm.stats.avro.UserActionAvro;
 import ru.practicum.aggregator.service.SimilarityCalculator;
+import ru.practicum.ewm.stats.avro.UserActionAvro;
 
 @Slf4j
 @Component
@@ -20,13 +20,13 @@ public class UserActionConsumer {
             groupId = "aggregator-group"
     )
     public void consume(UserActionAvro action, Acknowledgment acknowledgment) {
-        log.info("Received user action in aggregator: userId={}, eventId={}, action={}, timestamp={}",
-                action.getUserId(), action.getEventId(), action.getActionType(), action.getTimestamp());
+        log.info("Received user action in aggregator: userId={}, eventId={}, action={}",
+                action.getUserId(), action.getEventId(), action.getActionType());
 
         try {
             similarityCalculator.processAction(action);
             acknowledgment.acknowledge();
-            log.info("Successfully processed and acknowledged action");
+            log.info("Successfully processed action");
         } catch (Exception e) {
             log.error("Error processing action: {}", e.getMessage(), e);
             acknowledgment.acknowledge();

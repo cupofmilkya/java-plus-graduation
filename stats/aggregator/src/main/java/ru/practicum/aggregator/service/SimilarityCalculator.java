@@ -21,11 +21,11 @@ public class SimilarityCalculator {
     private static final double REGISTER_WEIGHT = 0.8;
     private static final double LIKE_WEIGHT = 1.0;
 
-    private final Map<Long, Map<Long, Double>> userEventWeights = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, Double>> eventUserWeights = new ConcurrentHashMap<>();
 
     private final Map<Long, Double> eventTotalSums = new ConcurrentHashMap<>();
 
-    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
+    private final MinWeightsMatrix minWeightsMatrix = new MinWeightsMatrix();
 
     private final KafkaTemplate<Void, EventSimilarityAvro> kafkaTemplate;
 
@@ -36,69 +36,47 @@ public class SimilarityCalculator {
     public void processAction(UserActionAvro action) {
         long userId = action.getUserId();
         long eventId = action.getEventId();
-        double weight = getWeight(action.getActionType());  // <-- теперь double
+        double newWeight = getWeight(action.getActionType());
 
-        log.debug("Processing action: userId={}, eventId={}, weight={}", userId, eventId, weight);
+        log.debug("Processing action: userId={}, eventId={}, weight={}", userId, eventId, newWeight);
 
-        Map<Long, Double> userEvents = userEventWeights.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
-        Double oldWeight = userEvents.get(eventId);
+        Map<Long, Double> userWeights = eventUserWeights.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>());
+        Double oldWeight = userWeights.get(userId);
 
-        if (oldWeight != null && oldWeight >= weight) {
-            log.debug("Weight for user {} event {} not increased (old={}, new={})",
-                    userId, eventId, oldWeight, weight);
+        if (oldWeight != null && oldWeight >= newWeight) {
+            log.debug("Weight not increased: userId={}, eventId={}, old={}, new={}",
+                    userId, eventId, oldWeight, newWeight);
             return;
         }
 
-        userEvents.put(eventId, weight);
+        userWeights.put(userId, newWeight);
 
         double oldTotal = eventTotalSums.getOrDefault(eventId, 0.0);
-        double delta = (oldWeight == null) ? weight : (weight - oldWeight);
+        double delta = (oldWeight == null) ? newWeight : (newWeight - oldWeight);
         eventTotalSums.put(eventId, oldTotal + delta);
 
         log.debug("Updated total for event {}: {} -> {}", eventId, oldTotal, oldTotal + delta);
 
-        for (Map.Entry<Long, Double> otherEntry : userEvents.entrySet()) {
-            long otherEventId = otherEntry.getKey();
-            if (otherEventId == eventId) continue;
+        for (Long otherEventId : eventUserWeights.keySet()) {
+            if (otherEventId.equals(eventId)) continue;
 
-            double otherWeight = otherEntry.getValue();
-            double minWeight = Math.min(weight, otherWeight);
+            Map<Long, Double> otherUserWeights = eventUserWeights.get(otherEventId);
+            Double otherWeight = otherUserWeights != null ? otherUserWeights.get(userId) : null;
 
-            long first = Math.min(eventId, otherEventId);
-            long second = Math.max(eventId, otherEventId);
+            if (otherWeight != null) {
+                double minWeight = Math.min(newWeight, otherWeight);
+                minWeightsMatrix.add(eventId, otherEventId, minWeight);
 
-            Map<Long, Double> innerMap = minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>());
-            innerMap.merge(second, minWeight, Double::sum);
-
-            log.debug("Updated min sum for pair ({}, {}): +{}", first, second, minWeight);
-        }
-
-        // Отправляем обновленные similarity
-        Map<Long, Double> pairsWithEvent = minWeightsSums.get(eventId);
-        if (pairsWithEvent != null) {
-            for (Map.Entry<Long, Double> pair : pairsWithEvent.entrySet()) {
-                long otherEventId = pair.getKey();
-                double minSum = pair.getValue();
-                sendSimilarity(eventId, otherEventId, minSum);
-            }
-        }
-
-        for (Map.Entry<Long, Map<Long, Double>> entry : minWeightsSums.entrySet()) {
-            long firstEventId = entry.getKey();
-            if (firstEventId == eventId) continue;
-
-            Map<Long, Double> innerMap = entry.getValue();
-            Double minSum = innerMap.get(eventId);
-            if (minSum != null) {
-                sendSimilarity(firstEventId, eventId, minSum);
+                sendSimilarity(eventId, otherEventId);
             }
         }
     }
 
-    private void sendSimilarity(long eventA, long eventB, double minWeightsSum) {
+    private void sendSimilarity(long eventA, long eventB) {
         long first = Math.min(eventA, eventB);
         long second = Math.max(eventA, eventB);
 
+        double sMin = minWeightsMatrix.get(first, second);
         double sA = eventTotalSums.getOrDefault(first, 0.0);
         double sB = eventTotalSums.getOrDefault(second, 0.0);
 
@@ -109,11 +87,11 @@ public class SimilarityCalculator {
 
         double norm1 = Math.sqrt(sA);
         double norm2 = Math.sqrt(sB);
-        double similarity = minWeightsSum / (norm1 * norm2);
+        double similarity = sMin / (norm1 * norm2);
         similarity = Math.min(1.0, Math.max(0.0, similarity));
 
-        log.info("Similarity: {} <-> {} = {} (minSum={}, norm1={}, norm2={})",
-                first, second, similarity, minWeightsSum, norm1, norm2);
+        log.info("Similarity: {} <-> {} = {} (sMin={}, norm1={}, norm2={})",
+                first, second, similarity, sMin, norm1, norm2);
 
         EventSimilarityAvro avro = EventSimilarityAvro.newBuilder()
                 .setEventA(first)
@@ -127,11 +105,28 @@ public class SimilarityCalculator {
     }
 
     private double getWeight(ActionTypeAvro actionType) {
-        switch (actionType) {
-            case VIEW: return VIEW_WEIGHT;
-            case REGISTER: return REGISTER_WEIGHT;
-            case LIKE: return LIKE_WEIGHT;
-            default: return 0.0;
+        return switch (actionType) {
+            case VIEW -> VIEW_WEIGHT;
+            case REGISTER -> REGISTER_WEIGHT;
+            case LIKE -> LIKE_WEIGHT;
+        };
+    }
+
+    private static class MinWeightsMatrix {
+        private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
+
+        public void add(long eventA, long eventB, double value) {
+            long first = Math.min(eventA, eventB);
+            long second = Math.max(eventA, eventB);
+            minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>())
+                    .merge(second, value, Double::sum);
+        }
+
+        public double get(long eventA, long eventB) {
+            long first = Math.min(eventA, eventB);
+            long second = Math.max(eventA, eventB);
+            return minWeightsSums.getOrDefault(first, Map.of())
+                    .getOrDefault(second, 0.0);
         }
     }
 }

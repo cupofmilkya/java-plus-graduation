@@ -9,12 +9,9 @@ import java.util.List;
 
 public interface UserActionRepository extends JpaRepository<UserAction, Long> {
 
-    @Query("SELECT ua.eventId, MAX(ua.weight) FROM UserAction ua WHERE ua.userId = :userId GROUP BY ua.eventId")
-    List<Object[]> findMaxWeightsByUserId(@Param("userId") Long userId);
-
     List<UserAction> findByUserIdOrderByTimestampDesc(Long userId);
 
-    boolean existsByUserIdAndEventId(Long userId, Long eventId);
+    List<UserAction> findByEventId(Long eventId);
 
     @Query("SELECT ua.userId, MAX(ua.weight) FROM UserAction ua WHERE ua.eventId = :eventId GROUP BY ua.userId")
     List<Object[]> findMaxWeightsByEventId(@Param("eventId") Long eventId);

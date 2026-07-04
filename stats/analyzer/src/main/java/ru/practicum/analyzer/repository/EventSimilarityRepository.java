@@ -12,10 +12,6 @@ public interface EventSimilarityRepository extends JpaRepository<EventSimilarity
 
     Optional<EventSimilarity> findByEventAAndEventB(Long eventA, Long eventB);
 
-    @Query("SELECT es FROM EventSimilarity es WHERE es.eventA = :eventId OR es.eventB = :eventId ORDER BY es.score DESC")
-    List<EventSimilarity> findSimilaritiesByEventId(@Param("eventId") Long eventId);
-
-    @Query("SELECT es FROM EventSimilarity es WHERE (es.eventA = :eventId OR es.eventB = :eventId) AND es.score >= :minScore ORDER BY es.score DESC")
-    List<EventSimilarity> findSimilaritiesByEventIdWithMinScore(@Param("eventId") Long eventId,
-                                                                @Param("minScore") Double minScore);
+    @Query("SELECT es FROM EventSimilarity es WHERE es.eventA = :eventId OR es.eventB = :eventId")
+    List<EventSimilarity> findByEventAOrEventB(@Param("eventId") Long eventId);
 }
