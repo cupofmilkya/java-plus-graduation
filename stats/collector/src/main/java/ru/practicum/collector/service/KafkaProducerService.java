@@ -16,7 +16,7 @@ public class KafkaProducerService {
 
     private static final String TOPIC = "stats.user-actions.v1";
 
-    private final KafkaTemplate<String, UserActionAvro> kafkaTemplate;
+    private final KafkaTemplate<Void, UserActionAvro> kafkaTemplate;  // <-- Изменено
 
     public void sendAction(UserActionProto proto) {
         long timestampMillis = proto.getTimestamp().getSeconds() * 1000 +
@@ -32,7 +32,7 @@ public class KafkaProducerService {
         log.info("Sending user action to Kafka: userId={}, eventId={}, action={}, timestamp={}",
                 avro.getUserId(), avro.getEventId(), avro.getActionType(), avro.getTimestamp());
 
-        kafkaTemplate.send(TOPIC, null, avro);
+        kafkaTemplate.send(TOPIC, null, avro);  // key = null
     }
 
     private ActionTypeAvro convertActionType(ActionTypeProto proto) {

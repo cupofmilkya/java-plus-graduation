@@ -11,6 +11,7 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.VoidDeserializer
       value-deserializer: ru.practicum.aggregator.serialization.UserActionAvroDeserializer
+      enable-auto-commit: false
       properties:
         specific.avro.reader: true
     producer:

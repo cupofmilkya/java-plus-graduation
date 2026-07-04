@@ -22,11 +22,14 @@ public class SimilarityCalculator {
     private static final int LIKE_WEIGHT = 3;
 
     private final Map<Long, Map<Long, Integer>> userEventWeights = new ConcurrentHashMap<>();
-    private final Map<Long, Double> eventTotalSums = new ConcurrentHashMap<>();
-    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
-    private final KafkaTemplate<String, EventSimilarityAvro> kafkaTemplate;
 
-    public SimilarityCalculator(KafkaTemplate<String, EventSimilarityAvro> kafkaTemplate) {
+    private final Map<Long, Double> eventTotalSums = new ConcurrentHashMap<>();
+
+    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
+
+    private final KafkaTemplate<Void, EventSimilarityAvro> kafkaTemplate;
+
+    public SimilarityCalculator(KafkaTemplate<Void, EventSimilarityAvro> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
@@ -35,11 +38,14 @@ public class SimilarityCalculator {
         long eventId = action.getEventId();
         int weight = getWeight(action.getActionType());
 
+        log.debug("Processing action: userId={}, eventId={}, weight={}", userId, eventId, weight);
+
         Map<Long, Integer> userEvents = userEventWeights.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
         Integer oldWeight = userEvents.get(eventId);
 
         if (oldWeight != null && oldWeight >= weight) {
-            log.debug("Weight for user {} event {} not increased (old={}, new={})", userId, eventId, oldWeight, weight);
+            log.debug("Weight for user {} event {} not increased (old={}, new={})",
+                    userId, eventId, oldWeight, weight);
             return;
         }
 
@@ -49,55 +55,74 @@ public class SimilarityCalculator {
         double delta = (oldWeight == null) ? weight : (weight - oldWeight);
         eventTotalSums.put(eventId, oldTotal + delta);
 
+        log.debug("Updated total for event {}: {} -> {}", eventId, oldTotal, oldTotal + delta);
+
         for (Map.Entry<Long, Integer> otherEntry : userEvents.entrySet()) {
             long otherEventId = otherEntry.getKey();
             if (otherEventId == eventId) continue;
+
             int otherWeight = otherEntry.getValue();
             int minWeight = Math.min(weight, otherWeight);
-            addToMinSum(eventId, otherEventId, minWeight);
+
+            long first = Math.min(eventId, otherEventId);
+            long second = Math.max(eventId, otherEventId);
+
+            Map<Long, Double> innerMap = minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>());
+            innerMap.merge(second, (double) minWeight, Double::sum);
+
+            log.debug("Updated min sum for pair ({}, {}): +{}", first, second, minWeight);
         }
 
-        Map<Long, Double> pairsFirst = minWeightsSums.getOrDefault(eventId, new ConcurrentHashMap<>());
-        for (Map.Entry<Long, Double> pair : pairsFirst.entrySet()) {
-            long second = pair.getKey();
-            sendSimilarity(eventId, second, pair.getValue());
+        Map<Long, Double> pairsWithEvent = minWeightsSums.get(eventId);
+        if (pairsWithEvent != null) {
+            for (Map.Entry<Long, Double> pair : pairsWithEvent.entrySet()) {
+                long otherEventId = pair.getKey();
+                double minSum = pair.getValue();
+                sendSimilarity(eventId, otherEventId, minSum);
+            }
         }
 
         for (Map.Entry<Long, Map<Long, Double>> entry : minWeightsSums.entrySet()) {
-            long first = entry.getKey();
-            if (first == eventId) continue;
-            Double sMin = entry.getValue().get(eventId);
-            if (sMin != null) {
-                sendSimilarity(first, eventId, sMin);
+            long firstEventId = entry.getKey();
+            if (firstEventId == eventId) continue;
+
+            Map<Long, Double> innerMap = entry.getValue();
+            Double minSum = innerMap.get(eventId);
+            if (minSum != null) {
+                sendSimilarity(firstEventId, eventId, minSum);
             }
         }
     }
 
-    private void sendSimilarity(long eventA, long eventB, double sMin) {
+    private void sendSimilarity(long eventA, long eventB, double minWeightsSum) {
         long first = Math.min(eventA, eventB);
         long second = Math.max(eventA, eventB);
+
         double sA = eventTotalSums.getOrDefault(first, 0.0);
         double sB = eventTotalSums.getOrDefault(second, 0.0);
-        if (sA == 0 || sB == 0) return;
-        double similarity = sMin / (Math.sqrt(sA) * Math.sqrt(sB));
+
+        if (sA == 0 || sB == 0) {
+            log.debug("Skipping similarity: sA={}, sB={}", sA, sB);
+            return;
+        }
+
+        double norm1 = Math.sqrt(sA);
+        double norm2 = Math.sqrt(sB);
+        double similarity = minWeightsSum / (norm1 * norm2);
         similarity = Math.min(1.0, Math.max(0.0, similarity));
+
+        log.info("Similarity: {} <-> {} = {} (minSum={}, norm1={}, norm2={})",
+                first, second, similarity, minWeightsSum, norm1, norm2);
 
         EventSimilarityAvro avro = EventSimilarityAvro.newBuilder()
                 .setEventA(first)
                 .setEventB(second)
                 .setScore((float) similarity)
-                .setTimestamp(Instant.now())
+                .setTimestamp(Instant.ofEpochSecond(System.currentTimeMillis()))
                 .build();
 
-        kafkaTemplate.send(SIMILARITY_TOPIC, String.valueOf(first), avro);
-        log.debug("Sent similarity: {} <-> {} = {}", first, second, similarity);
-    }
-
-    private void addToMinSum(long eventA, long eventB, int minWeight) {
-        long first = Math.min(eventA, eventB);
-        long second = Math.max(eventA, eventB);
-        Map<Long, Double> innerMap = minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>());
-        innerMap.merge(second, (double) minWeight, Double::sum);
+        kafkaTemplate.send(SIMILARITY_TOPIC, null, avro);
+        log.info("Sent similarity to topic: {}", SIMILARITY_TOPIC);
     }
 
     private int getWeight(ActionTypeAvro actionType) {
