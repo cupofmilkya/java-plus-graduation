@@ -17,8 +17,7 @@ public class UserActionConsumer {
 
     @KafkaListener(
             topics = "stats.user-actions.v1",
-            groupId = "aggregator-group",
-            containerFactory = "kafkaListenerContainerFactory"
+            groupId = "aggregator-group"
     )
     public void consume(UserActionAvro action, Acknowledgment acknowledgment) {
         log.info("Received user action in aggregator: userId={}, eventId={}, action={}, timestamp={}",

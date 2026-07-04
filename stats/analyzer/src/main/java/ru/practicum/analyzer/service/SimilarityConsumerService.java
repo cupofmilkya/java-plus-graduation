@@ -1,12 +1,12 @@
-package ru.practicum.service;
+package ru.practicum.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.model.EventSimilarity;
-import ru.practicum.repository.EventSimilarityRepository;
+import ru.practicum.analyzer.model.EventSimilarity;
+import ru.practicum.analyzer.repository.EventSimilarityRepository;
 import ru.practicum.ewm.stats.avro.EventSimilarityAvro;
 
 import java.time.ZoneOffset;

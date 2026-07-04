@@ -1,9 +1,9 @@
-package ru.practicum.grpc;
+package ru.practicum.analyzer.grpc;
 
 import io.grpc.stub.StreamObserver;
 import lombok.RequiredArgsConstructor;
 import net.devh.boot.grpc.server.service.GrpcService;
-import ru.practicum.service.RecommendationService;
+import ru.practicum.analyzer.service.RecommendationService;
 import ru.practicum.stats.service.dashboard.*;
 
 import java.util.List;

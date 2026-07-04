@@ -1,12 +1,12 @@
-package ru.practicum.service;
+package ru.practicum.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.model.UserAction;
-import ru.practicum.repository.UserActionRepository;
+import ru.practicum.analyzer.model.UserAction;
+import ru.practicum.analyzer.repository.UserActionRepository;
 import ru.practicum.ewm.stats.avro.ActionTypeAvro;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
 

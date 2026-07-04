@@ -1,12 +1,12 @@
-package ru.practicum.service;
+package ru.practicum.analyzer.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.model.EventSimilarity;
-import ru.practicum.model.UserAction;
-import ru.practicum.repository.EventSimilarityRepository;
-import ru.practicum.repository.UserActionRepository;
+import ru.practicum.analyzer.model.EventSimilarity;
+import ru.practicum.analyzer.model.UserAction;
+import ru.practicum.analyzer.repository.EventSimilarityRepository;
+import ru.practicum.analyzer.repository.UserActionRepository;
 import ru.practicum.stats.service.dashboard.RecommendedEventProto;
 
 import java.util.*;
