@@ -6,7 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.stats.avro.UserActionAvro;
-import ru.practicum.service.SimilarityCalculator;
+import ru.practicum.aggregator.service.SimilarityCalculator;
 
 @Slf4j
 @Component
