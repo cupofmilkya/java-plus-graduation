@@ -42,7 +42,7 @@ public class UserActionConsumerService {
                 .userId(action.getUserId())
                 .eventId(action.getEventId())
                 .actionType(action.getActionType().toString())
-                .weight((weight * 10))
+                .weight(weight)
                 .timestamp(timestamp)
                 .build();
 
