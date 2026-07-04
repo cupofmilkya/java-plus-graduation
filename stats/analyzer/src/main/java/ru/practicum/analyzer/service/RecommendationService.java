@@ -101,11 +101,12 @@ public class RecommendationService {
         List<RecommendedEventProto> result = new ArrayList<>();
 
         for (Long eventId : eventIds) {
-            List<UserAction> actions = userActionRepository.findByEventId(eventId);
+            List<Object[]> maxWeightsByUser = userActionRepository.findMaxWeightsByEventId(eventId);
 
             double totalWeight = 0.0;
-            for (UserAction action : actions) {
-                totalWeight += action.getWeight() != null ? action.getWeight() : 0.0;
+            for (Object[] row : maxWeightsByUser) {
+                Double maxWeight = (Double) row[1];
+                totalWeight += maxWeight != null ? maxWeight : 0.0;
             }
 
             result.add(RecommendedEventProto.newBuilder()
