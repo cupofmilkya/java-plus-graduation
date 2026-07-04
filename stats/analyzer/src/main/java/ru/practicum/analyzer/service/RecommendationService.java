@@ -68,7 +68,13 @@ public class RecommendationService {
 
         List<EventSimilarity> similarities = similarityRepository.findByEventAOrEventB(eventId);
         if (similarities.isEmpty()) {
+            log.info("No similarities found for event {}", eventId);
             return Collections.emptyList();
+        }
+
+        log.info("Found {} similarities for event {}", similarities.size(), eventId);
+        for (EventSimilarity sim : similarities) {
+            log.debug("Similarity: {} <-> {} = {}", sim.getEventA(), sim.getEventB(), sim.getScore());
         }
 
         Set<Long> interacted = userActionRepository.findByUserIdOrderByTimestampDesc(userId)
@@ -76,12 +82,20 @@ public class RecommendationService {
                 .map(UserAction::getEventId)
                 .collect(Collectors.toSet());
 
+        log.info("User {} interacted with {} events", userId, interacted.size());
+
         return similarities.stream()
                 .map(sim -> {
                     Long other = sim.getEventA().equals(eventId) ? sim.getEventB() : sim.getEventA();
                     return Map.entry(other, sim.getScore());
                 })
-                .filter(e -> !interacted.contains(e.getKey()))
+                .filter(e -> {
+                    boolean notInteracted = !interacted.contains(e.getKey());
+                    if (!notInteracted) {
+                        log.debug("Filtering out event {} because user already interacted with it", e.getKey());
+                    }
+                    return notInteracted;
+                })
                 .sorted((e1, e2) -> Double.compare(e2.getValue(), e1.getValue()))
                 .limit(maxResults)
                 .map(e -> RecommendedEventProto.newBuilder()
@@ -101,13 +115,28 @@ public class RecommendationService {
         List<RecommendedEventProto> result = new ArrayList<>();
 
         for (Long eventId : eventIds) {
+            log.info("=== Processing event {} ===", eventId);
+
+            List<UserAction> allActions = userActionRepository.findByEventId(eventId);
+            log.info("Found {} total actions for event {}", allActions.size(), eventId);
+
+            for (UserAction action : allActions) {
+                log.debug("Action: userId={}, weight={}, type={}",
+                        action.getUserId(), action.getWeight(), action.getActionType());
+            }
+
             List<Object[]> maxWeightsByUser = userActionRepository.findMaxWeightsByEventId(eventId);
+            log.info("Found {} unique users with max weights for event {}", maxWeightsByUser.size(), eventId);
 
             double totalWeight = 0.0;
             for (Object[] row : maxWeightsByUser) {
+                Long userId = (Long) row[0];
                 Double maxWeight = (Double) row[1];
+                log.debug("User {} max weight: {}", userId, maxWeight);
                 totalWeight += maxWeight != null ? maxWeight : 0.0;
             }
+
+            log.info("Event {}: totalWeight={}, userCount={}", eventId, totalWeight, maxWeightsByUser.size());
 
             result.add(RecommendedEventProto.newBuilder()
                     .setEventId(eventId)

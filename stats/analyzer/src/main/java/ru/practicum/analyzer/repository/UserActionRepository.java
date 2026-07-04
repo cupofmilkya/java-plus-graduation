@@ -15,4 +15,7 @@ public interface UserActionRepository extends JpaRepository<UserAction, Long> {
 
     @Query("SELECT ua.userId, MAX(ua.weight) FROM UserAction ua WHERE ua.eventId = :eventId GROUP BY ua.userId")
     List<Object[]> findMaxWeightsByEventId(@Param("eventId") Long eventId);
+
+    @Query("SELECT ua FROM UserAction ua WHERE ua.userId = :userId AND ua.eventId = :eventId")
+    List<UserAction> findByUserIdAndEventId(@Param("userId") Long userId, @Param("eventId") Long eventId);
 }

@@ -14,6 +14,7 @@ import ru.practicum.ewm.stats.avro.UserActionAvro;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -37,6 +38,17 @@ public class UserActionConsumerService {
                 .toLocalDateTime();
 
         double weight = getWeight(action.getActionType());
+        log.info("Converted weight: {} for action type {}", weight, action.getActionType());
+
+        List<UserAction> existing = userActionRepository.findByUserIdAndEventId(action.getUserId(), action.getEventId());
+        if (!existing.isEmpty()) {
+            log.info("Found existing actions for user {} and event {}: {}",
+                    action.getUserId(), action.getEventId(), existing.size());
+            for (UserAction e : existing) {
+                log.info("Existing: userId={}, eventId={}, weight={}, timestamp={}",
+                        e.getUserId(), e.getEventId(), e.getWeight(), e.getTimestamp());
+            }
+        }
 
         UserAction entity = UserAction.builder()
                 .userId(action.getUserId())
@@ -46,8 +58,9 @@ public class UserActionConsumerService {
                 .timestamp(timestamp)
                 .build();
 
-        userActionRepository.save(entity);
-        log.info("Saved user action: {}", entity);
+        UserAction saved = userActionRepository.save(entity);
+        log.info("Saved user action: id={}, userId={}, eventId={}, weight={}, timestamp={}",
+                saved.getId(), saved.getUserId(), saved.getEventId(), saved.getWeight(), saved.getTimestamp());
 
         acknowledgment.acknowledge();
     }
