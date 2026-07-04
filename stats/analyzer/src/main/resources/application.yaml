@@ -7,7 +7,7 @@ spring:
   config:
     import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:postgres}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:5432/${POSTGRES_DB:analyzer}
     username: ${POSTGRES_USER:postgres}
     password: ${POSTGRES_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
@@ -28,8 +28,6 @@ spring:
     consumer:
       group-id: analyzer-group
       auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.VoidDeserializer
-      value-deserializer: ru.practicum.analyzer.serialization.UserActionAvroDeserializer
     listener:
       ack-mode: manual
 

@@ -23,7 +23,8 @@ public class EventSimilarityConsumer {
 
     @KafkaListener(
             topics = "stats.events-similarity.v1",
-            groupId = "analyzer-group"
+            groupId = "analyzer-group",
+            containerFactory = "eventSimilarityKafkaListenerContainerFactory"
     )
     @Transactional
     public void consume(EventSimilarityAvro avro, Acknowledgment acknowledgment) {
