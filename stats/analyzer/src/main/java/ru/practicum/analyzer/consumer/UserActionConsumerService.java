@@ -25,7 +25,8 @@ public class UserActionConsumerService {
 
     @KafkaListener(
             topics = "stats.user-actions.v1",
-            groupId = "analyzer-group"
+            groupId = "aggregator-group",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     @Transactional
     public void consume(UserActionAvro action, Acknowledgment acknowledgment) {
@@ -67,10 +68,14 @@ public class UserActionConsumerService {
 
     private double getWeight(ActionTypeAvro actionType) {
         switch (actionType) {
-            case VIEW: return 0.4;
-            case REGISTER: return 0.8;
-            case LIKE: return 1.0;
-            default: return 0.0;
+            case VIEW:
+                return 0.4;
+            case REGISTER:
+                return 0.8;
+            case LIKE:
+                return 1.0;
+            default:
+                return 0.0;
         }
     }
 }
