@@ -17,11 +17,12 @@ public class UserActionConsumer {
 
     @KafkaListener(
             topics = "stats.user-actions.v1",
-            groupId = "aggregator-group"
+            groupId = "aggregator-group",
+            containerFactory = "kafkaListenerContainerFactory"
     )
     public void consume(UserActionAvro action, Acknowledgment acknowledgment) {
-        log.info("Received user action in aggregator: userId={}, eventId={}, action={}",
-                action.getUserId(), action.getEventId(), action.getActionType());
+        log.info("Received user action in aggregator: userId={}, eventId={}, action={}, timestamp={}",
+                action.getUserId(), action.getEventId(), action.getActionType(), action.getTimestamp());
 
         try {
             similarityCalculator.processAction(action);

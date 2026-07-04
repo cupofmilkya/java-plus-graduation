@@ -14,11 +14,18 @@ spring:
       enable-auto-commit: false
       properties:
         specific.avro.reader: true
+        session.timeout.ms: 60000
+        request.timeout.ms: 60000
+        max.poll.interval.ms: 600000
     producer:
       key-serializer: org.apache.kafka.common.serialization.VoidSerializer
       value-serializer: ru.practicum.aggregator.serialization.EventSimilarityAvroSerializer
+      properties:
+        request.timeout.ms: 60000
+        delivery.timeout.ms: 120000
     listener:
       ack-mode: manual
+      poll-timeout: 5000
   config:
     import: optional:configserver:http://localhost:8888
 
@@ -29,8 +36,10 @@ eureka:
   instance:
     preferIpAddress: true
     instance-id: ${spring.application.name}:${random.value}
+    lease-renewal-interval-in-seconds: 10
 
 logging:
   level:
     ru.practicum: DEBUG
     org.springframework.kafka: INFO
+    org.apache.kafka: WARN
