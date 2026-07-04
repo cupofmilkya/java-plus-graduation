@@ -21,11 +21,11 @@ public class SimilarityCalculator {
     private static final double REGISTER_WEIGHT = 0.8;
     private static final double LIKE_WEIGHT = 1.0;
 
-    private final Map<Long, Map<Long, Double>> eventUserWeights = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, Double>> userEventWeights = new ConcurrentHashMap<>();
 
     private final Map<Long, Double> eventTotalSums = new ConcurrentHashMap<>();
 
-    private final MinWeightsMatrix minWeightsMatrix = new MinWeightsMatrix();
+    private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
 
     private final KafkaTemplate<Void, EventSimilarityAvro> kafkaTemplate;
 
@@ -36,52 +36,64 @@ public class SimilarityCalculator {
     public void processAction(UserActionAvro action) {
         long userId = action.getUserId();
         long eventId = action.getEventId();
-        double newWeight = getWeight(action.getActionType());
+        double weight = getWeight(action.getActionType());
 
-        log.debug("Processing action: userId={}, eventId={}, weight={}", userId, eventId, newWeight);
+        log.info("Processing action: userId={}, eventId={}, weight={}", userId, eventId, weight);
 
-        Map<Long, Double> userWeights = eventUserWeights.computeIfAbsent(eventId, k -> new ConcurrentHashMap<>());
-        Double oldWeight = userWeights.get(userId);
+        Map<Long, Double> userEvents = userEventWeights.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
+        Double oldWeight = userEvents.get(eventId);
 
-        if (oldWeight != null && oldWeight >= newWeight) {
-            log.debug("Weight not increased: userId={}, eventId={}, old={}, new={}",
-                    userId, eventId, oldWeight, newWeight);
+        if (oldWeight != null && oldWeight >= weight) {
+            log.debug("Weight not increased for userId={}, eventId={}, old={}, new={}",
+                    userId, eventId, oldWeight, weight);
             return;
         }
 
-        userWeights.put(userId, newWeight);
+        userEvents.put(eventId, weight);
 
         double oldTotal = eventTotalSums.getOrDefault(eventId, 0.0);
-        double delta = (oldWeight == null) ? newWeight : (newWeight - oldWeight);
+        double delta = (oldWeight == null) ? weight : (weight - oldWeight);
         eventTotalSums.put(eventId, oldTotal + delta);
 
-        log.debug("Updated total for event {}: {} -> {}", eventId, oldTotal, oldTotal + delta);
+        log.info("Updated total for event {}: {} -> {}", eventId, oldTotal, oldTotal + delta);
 
-        for (Long otherEventId : eventUserWeights.keySet()) {
-            if (otherEventId.equals(eventId)) continue;
+        for (Map.Entry<Long, Double> otherUserEvent : userEvents.entrySet()) {
+            long otherEventId = otherUserEvent.getKey();
+            if (otherEventId == eventId) continue;
 
-            Map<Long, Double> otherUserWeights = eventUserWeights.get(otherEventId);
-            Double otherWeight = otherUserWeights != null ? otherUserWeights.get(userId) : null;
+            double otherWeight = otherUserEvent.getValue();
+            double minWeight = Math.min(weight, otherWeight);
 
-            if (otherWeight != null) {
-                double minWeight = Math.min(newWeight, otherWeight);
-                minWeightsMatrix.add(eventId, otherEventId, minWeight);
+            long first = Math.min(eventId, otherEventId);
+            long second = Math.max(eventId, otherEventId);
 
-                sendSimilarity(eventId, otherEventId);
-            }
+            Map<Long, Double> innerMap = minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>());
+            innerMap.merge(second, minWeight, Double::sum);
+
+            log.info("Updated min sum for pair ({}, {}): +{}", first, second, minWeight);
+
+            sendSimilarity(first, second);
         }
     }
 
-    private void sendSimilarity(long eventA, long eventB) {
-        long first = Math.min(eventA, eventB);
-        long second = Math.max(eventA, eventB);
-
-        double sMin = minWeightsMatrix.get(first, second);
+    private void sendSimilarity(long first, long second) {
+        double sMin = minWeightsSums.getOrDefault(first, Map.of()).getOrDefault(second, 0.0);
         double sA = eventTotalSums.getOrDefault(first, 0.0);
         double sB = eventTotalSums.getOrDefault(second, 0.0);
 
+        log.info("sendSimilarity: first={}, second={}, sMin={}, sA={}, sB={}",
+                first, second, sMin, sA, sB);
+
         if (sA == 0 || sB == 0) {
-            log.debug("Skipping similarity: sA={}, sB={}", sA, sB);
+            log.warn("sA or sB is 0, similarity will be 0");
+            EventSimilarityAvro avro = EventSimilarityAvro.newBuilder()
+                    .setEventA(first)
+                    .setEventB(second)
+                    .setScore(0.0f)
+                    .setTimestamp(Instant.now())
+                    .build();
+            kafkaTemplate.send(SIMILARITY_TOPIC, null, avro);
+            log.info("Sent similarity with score 0 to topic: {}", SIMILARITY_TOPIC);
             return;
         }
 
@@ -90,14 +102,13 @@ public class SimilarityCalculator {
         double similarity = sMin / (norm1 * norm2);
         similarity = Math.min(1.0, Math.max(0.0, similarity));
 
-        log.info("Similarity: {} <-> {} = {} (sMin={}, norm1={}, norm2={})",
-                first, second, similarity, sMin, norm1, norm2);
+        log.info("Similarity: {} <-> {} = {}", first, second, similarity);
 
         EventSimilarityAvro avro = EventSimilarityAvro.newBuilder()
                 .setEventA(first)
                 .setEventB(second)
                 .setScore((float) similarity)
-                .setTimestamp(Instant.ofEpochSecond(System.currentTimeMillis()))
+                .setTimestamp(Instant.now())
                 .build();
 
         kafkaTemplate.send(SIMILARITY_TOPIC, null, avro);
@@ -110,23 +121,5 @@ public class SimilarityCalculator {
             case REGISTER -> REGISTER_WEIGHT;
             case LIKE -> LIKE_WEIGHT;
         };
-    }
-
-    private static class MinWeightsMatrix {
-        private final Map<Long, Map<Long, Double>> minWeightsSums = new ConcurrentHashMap<>();
-
-        public void add(long eventA, long eventB, double value) {
-            long first = Math.min(eventA, eventB);
-            long second = Math.max(eventA, eventB);
-            minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>())
-                    .merge(second, value, Double::sum);
-        }
-
-        public double get(long eventA, long eventB) {
-            long first = Math.min(eventA, eventB);
-            long second = Math.max(eventA, eventB);
-            return minWeightsSums.getOrDefault(first, Map.of())
-                    .getOrDefault(second, 0.0);
-        }
     }
 }
