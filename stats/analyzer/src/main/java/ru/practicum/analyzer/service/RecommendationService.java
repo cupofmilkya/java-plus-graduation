@@ -102,15 +102,15 @@ public class RecommendationService {
         for (Long eventId : eventIds) {
             List<Object[]> maxWeightsByUser = userActionRepository.findMaxWeightsByEventId(eventId);
 
-            double totalScore = 0.0;
+            double totalWeight = 0.0;
             for (Object[] row : maxWeightsByUser) {
-                Integer maxWeight = (Integer) row[1];
-                totalScore += maxWeight != null ? maxWeight : 0;
+                Double maxWeight = (Double) row[1];
+                totalWeight += maxWeight != null ? maxWeight : 0.0;
             }
 
             result.add(RecommendedEventProto.newBuilder()
                     .setEventId(eventId)
-                    .setScore(totalScore)
+                    .setScore(totalWeight)
                     .build());
         }
 

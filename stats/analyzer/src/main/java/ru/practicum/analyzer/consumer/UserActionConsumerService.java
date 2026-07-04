@@ -36,11 +36,13 @@ public class UserActionConsumerService {
                 .atZone(ZoneOffset.UTC)
                 .toLocalDateTime();
 
+        double weight = getWeight(action.getActionType());
+
         UserAction entity = UserAction.builder()
                 .userId(action.getUserId())
                 .eventId(action.getEventId())
                 .actionType(action.getActionType().toString())
-                .weight(getWeight(action.getActionType()))
+                .weight((weight * 10))
                 .timestamp(timestamp)
                 .build();
 
@@ -50,12 +52,12 @@ public class UserActionConsumerService {
         acknowledgment.acknowledge();
     }
 
-    private int getWeight(ActionTypeAvro actionType) {
+    private double getWeight(ActionTypeAvro actionType) {
         switch (actionType) {
-            case VIEW: return 1;
-            case REGISTER: return 2;
-            case LIKE: return 3;
-            default: return 0;
+            case VIEW: return 0.4;
+            case REGISTER: return 0.8;
+            case LIKE: return 1.0;
+            default: return 0.0;
         }
     }
 }

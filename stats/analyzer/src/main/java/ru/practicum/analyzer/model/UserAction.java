@@ -27,7 +27,7 @@ public class UserAction {
     private String actionType; // VIEW, REGISTER, LIKE
 
     @Column(name = "weight", nullable = false)
-    private Integer weight;
+    private Double weight;
 
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;

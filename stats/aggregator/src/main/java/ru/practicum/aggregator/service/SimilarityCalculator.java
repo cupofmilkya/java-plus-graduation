@@ -17,11 +17,11 @@ public class SimilarityCalculator {
 
     private static final String SIMILARITY_TOPIC = "stats.events-similarity.v1";
 
-    private static final int VIEW_WEIGHT = 1;
-    private static final int REGISTER_WEIGHT = 2;
-    private static final int LIKE_WEIGHT = 3;
+    private static final double VIEW_WEIGHT = 0.4;
+    private static final double REGISTER_WEIGHT = 0.8;
+    private static final double LIKE_WEIGHT = 1.0;
 
-    private final Map<Long, Map<Long, Integer>> userEventWeights = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Long, Double>> userEventWeights = new ConcurrentHashMap<>();
 
     private final Map<Long, Double> eventTotalSums = new ConcurrentHashMap<>();
 
@@ -36,12 +36,12 @@ public class SimilarityCalculator {
     public void processAction(UserActionAvro action) {
         long userId = action.getUserId();
         long eventId = action.getEventId();
-        int weight = getWeight(action.getActionType());
+        double weight = getWeight(action.getActionType());  // <-- теперь double
 
         log.debug("Processing action: userId={}, eventId={}, weight={}", userId, eventId, weight);
 
-        Map<Long, Integer> userEvents = userEventWeights.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
-        Integer oldWeight = userEvents.get(eventId);
+        Map<Long, Double> userEvents = userEventWeights.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
+        Double oldWeight = userEvents.get(eventId);
 
         if (oldWeight != null && oldWeight >= weight) {
             log.debug("Weight for user {} event {} not increased (old={}, new={})",
@@ -57,22 +57,23 @@ public class SimilarityCalculator {
 
         log.debug("Updated total for event {}: {} -> {}", eventId, oldTotal, oldTotal + delta);
 
-        for (Map.Entry<Long, Integer> otherEntry : userEvents.entrySet()) {
+        for (Map.Entry<Long, Double> otherEntry : userEvents.entrySet()) {
             long otherEventId = otherEntry.getKey();
             if (otherEventId == eventId) continue;
 
-            int otherWeight = otherEntry.getValue();
-            int minWeight = Math.min(weight, otherWeight);
+            double otherWeight = otherEntry.getValue();
+            double minWeight = Math.min(weight, otherWeight);
 
             long first = Math.min(eventId, otherEventId);
             long second = Math.max(eventId, otherEventId);
 
             Map<Long, Double> innerMap = minWeightsSums.computeIfAbsent(first, k -> new ConcurrentHashMap<>());
-            innerMap.merge(second, (double) minWeight, Double::sum);
+            innerMap.merge(second, minWeight, Double::sum);
 
             log.debug("Updated min sum for pair ({}, {}): +{}", first, second, minWeight);
         }
 
+        // Отправляем обновленные similarity
         Map<Long, Double> pairsWithEvent = minWeightsSums.get(eventId);
         if (pairsWithEvent != null) {
             for (Map.Entry<Long, Double> pair : pairsWithEvent.entrySet()) {
@@ -125,12 +126,12 @@ public class SimilarityCalculator {
         log.info("Sent similarity to topic: {}", SIMILARITY_TOPIC);
     }
 
-    private int getWeight(ActionTypeAvro actionType) {
+    private double getWeight(ActionTypeAvro actionType) {
         switch (actionType) {
             case VIEW: return VIEW_WEIGHT;
             case REGISTER: return REGISTER_WEIGHT;
             case LIKE: return LIKE_WEIGHT;
-            default: return 0;
+            default: return 0.0;
         }
     }
 }
